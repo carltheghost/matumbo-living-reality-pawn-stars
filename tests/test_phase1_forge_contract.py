@@ -10,6 +10,7 @@ MODULE = ROOT / "Pipeline" / "Blender" / "forge_contract.py"
 MANIFEST = ROOT / "Pipeline" / "Blender" / "forge_manifest.json"
 FORGE = ROOT / "Pipeline" / "Blender" / "chess_forge.py"
 PUBLISH = ROOT / "Pipeline" / "Blender" / "publish_approved.ps1"
+REVIEW_RUNNER = ROOT / "Pipeline" / "Blender" / "run_phase1_review.ps1"
 RUNNERS = [
     ROOT / "Pipeline" / "Blender" / "run_black.ps1",
     ROOT / "Pipeline" / "Blender" / "run_white.ps1",
@@ -84,6 +85,27 @@ class Phase1ForgeContractTests(unittest.TestCase):
         self.assertIn("valid_group_indices", source)
         self.assertIn("vertices lack export-rig weights", source)
         self.assertIn("obj.matrix_world = world", source)
+
+    def test_adaptive_2048_preview_and_qc_receipt_are_required(self):
+        source=FORGE.read_text(encoding="utf-8")
+        self.assertIn("def _world_bounds(", source)
+        self.assertIn("scene.render.resolution_x = 2048", source)
+        self.assertIn("scene.render.resolution_y = 2048", source)
+        self.assertIn("_setup_cinematic_scene(target, imported, samples)", source)
+        self.assertIn("def _write_qc_receipt(", source)
+        self.assertIn("_write_qc_receipt(target, imported, arm)", source)
+        self.assertIn("sha256", source.lower())
+        self.assertIn("cinematic source meshes require authored UVs", source)
+
+    def test_private_review_runner_requires_complete_twelve_piece_set(self):
+        review=REVIEW_RUNNER.read_text(encoding="utf-8")
+        self.assertIn("run_black.ps1", review)
+        self.assertIn("run_white.ps1", review)
+        self.assertIn("phase1-review-manifest.json", review)
+        self.assertIn("phase1-review.html", review)
+        self.assertIn("Publication remains CLOSED", review)
+        self.assertIn("preview-$slug.png", review)
+        self.assertIn("qc-$slug.json", review)
 
     def test_private_paths_and_all_twelve_publication_are_enforced(self):
         source=FORGE.read_text(encoding="utf-8")
