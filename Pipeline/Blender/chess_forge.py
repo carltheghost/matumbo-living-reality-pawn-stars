@@ -249,13 +249,13 @@ def _validate_mixamo(armature: Any, piece: str) -> None:
     missing = [name for name in required if name not in names]
     if missing:
         raise ForgeError(f"{piece}: Mixamo rig missing bones: {', '.join(missing)}")
-    bad = sorted(
-        b.name for b in bones
-        if getattr(b, "use_deform", True) and not b.name.startswith("mixamorig:")
-    )
+    # GLB armatures can carry non-deform helpers too. The contract is stricter
+    # than "deform bones only": every exported bone must stay in the
+    # mixamorig:* namespace so no control/helper junk leaks into gameplay.
+    bad = sorted(b.name for b in bones if not b.name.startswith("mixamorig:"))
     if bad:
         raise ForgeError(
-            f"{piece}: every deform/export bone must use mixamorig:* naming; "
+            f"{piece}: every export bone must use mixamorig:* naming; "
             f"bad={bad[:8]}"
         )
 
@@ -291,6 +291,16 @@ def _build_pbr_material(name: str, spec: dict[str, Any], root: pathlib.Path) -> 
     min_res = int(spec.get("minResolution", 0))
     nt = mat.node_tree
     bsdf = nt.nodes.get("Principled BSDF")
+    if bsdf is None:
+        raise ForgeError(f"Material {name}: Principled BSDF unavailable")
+    for input_name, key in (
+        ("IOR", "ior"),
+        ("Coat Weight", "coatWeight"),
+        ("Coat Roughness", "coatRoughness"),
+        ("Subsurface Weight", "subsurfaceWeight"),
+    ):
+        if key in spec and input_name in bsdf.inputs:
+            bsdf.inputs[input_name].default_value = float(spec[key])
     tex = spec.get("textures", {})
     for slot, input_name, non_color in (
         ("baseColor", "Base Color", False),
@@ -308,7 +318,17 @@ def _build_pbr_material(name: str, spec: dict[str, Any], root: pathlib.Path) -> 
             raise ForgeError(
                 f"{p}: texture resolution {tuple(node.image.size)} below {min_res}px floor"
             )
-        nt.links.new(node.outputs["Color"], bsdf.inputs[input_name])
+        if slot == "metallic":
+            # Obsidian and ivory are dielectric. Multiplying the authored map
+            # by the manifest scalar prevents a stray white metallic map from
+            # turning them into generic painted metal. Gold remains 1.0.
+            multiply = nt.nodes.new("ShaderNodeMath")
+            multiply.operation = "MULTIPLY"
+            multiply.inputs[1].default_value = float(spec["metallic"])
+            nt.links.new(node.outputs["Color"], multiply.inputs[0])
+            nt.links.new(multiply.outputs["Value"], bsdf.inputs[input_name])
+        else:
+            nt.links.new(node.outputs["Color"], bsdf.inputs[input_name])
     normal_rel = tex.get("normal")
     if normal_rel:
         p = _resolve_source(root, normal_rel)
@@ -436,18 +456,24 @@ def _parent_weighted_to_armature(
 
 
 def _validate_piece_law(target: BuildTarget, objects: Iterable[Any]) -> None:
-    searchable: list[str] = []
-    for obj in objects:
-        searchable.append(obj.name.lower())
-        if obj.type == "MESH":
-            searchable.extend(
-                slot.material.name.lower()
-                for slot in obj.material_slots
-                if slot.material is not None
-            )
-    names = " ".join(searchable)
+    object_names = " ".join(o.name.lower() for o in objects)
+    material_names = " ".join(
+        slot.material.name.lower()
+        for obj in objects
+        if obj.type == "MESH"
+        for slot in obj.material_slots
+        if slot.material is not None
+    )
     required = [s.lower() for s in target.spec.get("requiredTags", [])]
-    missing = [tag for tag in required if tag not in names]
+    material_region_tags = {"armor", "filigree"}
+    missing = [
+        tag for tag in required
+        if (
+            tag not in (object_names + " " + material_names)
+            if tag in material_region_tags
+            else tag not in object_names
+        )
+    ]
     if missing:
         raise ForgeError(
             f"{target.slug}: sculpt assembly missing character-law tags: {missing}"
@@ -481,7 +507,13 @@ def _validate_queen_face_policy(target: BuildTarget, objects: Iterable[Any]) -> 
             if mat is None:
                 continue
             name = mat.name.lower()
-            if name == "private_face_preview" or name.startswith("private_face_preview."):
+            if (
+                name == "private_face_preview"
+                or name.startswith("private_face_preview.")
+                or "tumbo_face" in name
+                or "male_face" in name
+                or "metahuman_tumbo" in name
+            ):
                 violations.append(f"{obj.name}:{mat.name}")
     if violations:
         raise ForgeError(
@@ -554,6 +586,52 @@ def _validate_private_metahuman_identity(
                     f"{target.slug}: flat face-photo materials are forbidden; "
                     "use the baked private MetaHuman head and authored skin maps"
                 )
+
+
+def _validate_raw_face_reference_absent(
+    target: BuildTarget, objects: Iterable[Any]
+) -> None:
+    """Never allow the raw face.jpg to become a texture dependency of a piece."""
+    if target.face_image is None:
+        return
+    face_path = target.face_image.resolve()
+    face_name = face_path.name.lower()
+    violations: list[str] = []
+    seen_images: set[int] = set()
+    for obj in objects:
+        if obj.type != "MESH":
+            continue
+        for slot in obj.material_slots:
+            mat = slot.material
+            if mat is None or not mat.use_nodes or mat.node_tree is None:
+                continue
+            for node in mat.node_tree.nodes:
+                image = getattr(node, "image", None)
+                if image is None or id(image) in seen_images:
+                    continue
+                seen_images.add(id(image))
+                image_name = str(getattr(image, "name", "")).lower()
+                raw_path = str(getattr(image, "filepath", "") or "")
+                resolved = None
+                if raw_path:
+                    try:
+                        resolved = pathlib.Path(bpy.path.abspath(raw_path)).resolve()
+                    except Exception:
+                        resolved = None
+                if (
+                    image_name == face_name
+                    or pathlib.Path(raw_path).name.lower() == face_name
+                    or resolved == face_path
+                ):
+                    violations.append(
+                        f"{obj.name}:{mat.name}:{getattr(image, 'name', '<image>')}"
+                    )
+    if violations:
+        raise ForgeError(
+            f"{target.slug}: raw face.jpg texture dependency detected; "
+            "only baked MetaHuman skin maps may enter review/export: "
+            + ", ".join(violations[:8])
+        )
 
 
 def _world_bounds(objects: Iterable[Any]) -> tuple[Any, Any, Any]:
@@ -756,6 +834,7 @@ def _build_one(
 
     _validate_piece_law(target, imported)
     _validate_queen_face_policy(target, imported)
+    _validate_raw_face_reference_absent(target, imported)
     _validate_geometry(target, imported)
     _validate_mixamo(arm, target.piece)
     rigid = _attach_rigid_parts(target, imported, arm)
