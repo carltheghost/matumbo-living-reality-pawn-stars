@@ -15,9 +15,10 @@ Procedural primitives can establish scale and socket layout, but they cannot cre
 3. **Rig gate** — Export skeleton must contain the standard `mixamorig:*` biped bones. Centaur knights add `mixamorig:Horse*` extension bones; all exported deform bones still use the `mixamorig:` namespace.
 4. **Look-dev / texture pass** — PBR faction materials are applied to tagged sculpt meshes (`ARMOR`, `FILIGREE`, `CAPE`). The manifest points at authored or reviewed AI-assisted base-color/roughness/metallic/normal maps. Texture generation itself is external to the forge; the forge consumes reviewed maps and never invents a face texture.
 5. **Private face review** — Male pieces read `face.jpg` only from `--face-image`. Until Tumbo approves publication, **all twelve** GLBs and PNGs are written to a local private review directory outside the repository. The script never copies `face.jpg` into Git.
-6. **Actual preview render** — The preview is rendered from the assembled 3D asset in a dark reflective board scene with warm key, cool fill and blue rim. Concept art cannot masquerade as a forge result.
-7. **GLB export + QC** — The same assembled asset is exported after geometry, character-law, material and rig gates pass.
-8. **Approval publication** — Only after Tumbo eyeballs all 12 private previews does `publish_approved.ps1` permit outputs to be written into `chess/glb/` for a PR.
+6. **Actual preview render** — The preview is rendered from the assembled 3D asset at 2048×2048 in a dark reflective board scene with warm key, cool fill and blue rim. Framing is computed from the real assembly bounds so the wide centaur and tall castle staff cannot be silently cropped. Concept art cannot masquerade as a forge result.
+7. **GLB export + QC** — The same assembled asset is exported after geometry, authored-UV, character-law, material and rig gates pass. Every piece also writes a private `qc-{faction}-{piece}.json` receipt with geometry counts plus SHA-256 hashes and byte sizes for the exact PNG/GLB pair.
+8. **Twelve-piece review gate** — `run_phase1_review.ps1` executes both armies, requires all 12 PNGs + GLBs + QC receipts, writes a private `phase1-review-manifest.json`, and builds `phase1-review.html` so Tumbo can inspect the complete set in one local board.
+9. **Approval publication** — Only after Tumbo eyeballs all 12 private previews does `publish_approved.ps1` permit outputs to be written into `chess/glb/` for a PR.
 
 The forge enforces the storage boundary: approved output must be inside the repository, while the private review directory and private face input must resolve outside it. Publication is all-or-nothing for both factions, and gameplay GLBs contain only the selected assembled actor—not the preview board, camera or lights.
 
@@ -55,9 +56,12 @@ $env:TUMBO_CHESS_SOURCE_ROOT='D:\maTumbo\cinematic-chess-source'
 $env:TUMBO_FACE_IMAGE='D:\maTumbo\private\face.jpg'
 .\Pipeline\Blender\run_black.ps1
 .\Pipeline\Blender\run_white.ps1
+
+# Preferred: both armies + completeness/hash/QC gate + local review board
+.\Pipeline\Blender\run_phase1_review.ps1
 ```
 
-These commands generate **private review** outputs only.
+These commands generate **private review** outputs only. The combined runner leaves `phase1-review.html` and `phase1-review-manifest.json` beside the private outputs; neither belongs in Git.
 
 After Tumbo explicitly approves every preview:
 
@@ -72,7 +76,9 @@ All twelve must pass before demo integration:
 - preview is rendered from the assembled 3D asset, not separate concept art;
 - signature silhouette law is present;
 - no placeholder/proxy/primitive source objects;
-- cinematic triangle/detail floor passes;
+- cinematic triangle/detail floor and authored-UV gates pass;
+- preview is 2048×2048 and adaptively frames the complete silhouette;
+- every output pair has a matching PASS QC receipt and SHA-256 hash;
 - obsidian/ivory + gold filigree material law passes;
 - `mixamorig:*` rig passes; centaur equine extension passes;
 - Tumbo approves each private preview;
