@@ -1,0 +1,310 @@
+{
+  "schemaVersion": 1,
+  "pipeline": "UE5.5.4 + MetaHuman + Blender 4.2+ sculpted-hybrid",
+  "qualityBar": "cinematic boss-fight photoreal; no placeholder/proxy/lowpoly/primitive character sources",
+  "privacy": {
+    "maleFacePublicByDefault": false,
+    "maleFaceInput": "local-only face.jpg is likeness provenance; forge consumes a baked private MetaHuman head, never the photo as a texture",
+    "rule": "All twelve GLBs/PNGs remain in private review output until Tumbo explicitly approves publication.",
+    "metaHumanHead": "faces/tumbo_metahuman_head.fbx stays under the external TUMBO_CHESS_SOURCE_ROOT and must not be committed"
+  },
+  "materials": {
+    "black": {
+      "armor": {
+        "baseColor": [
+          0.009,
+          0.01,
+          0.014,
+          1
+        ],
+        "metallic": 0,
+        "roughness": 0.22,
+        "textures": {
+          "baseColor": "textures/black/armor_basecolor.png",
+          "roughness": "textures/black/armor_roughness.png",
+          "metallic": "textures/black/armor_metallic.png",
+          "normal": "textures/black/armor_normal.png"
+        },
+        "minResolution": 4096,
+        "surfaceClass": "obsidian",
+        "ior": 1.5,
+        "coatWeight": 0.38,
+        "coatRoughness": 0.1
+      },
+      "gold": {
+        "baseColor": [
+          0.62,
+          0.34,
+          0.055,
+          1
+        ],
+        "metallic": 1,
+        "roughness": 0.18,
+        "textures": {
+          "baseColor": "textures/shared/gold_basecolor.png",
+          "roughness": "textures/shared/gold_roughness.png",
+          "metallic": "textures/shared/gold_metallic.png",
+          "normal": "textures/shared/gold_engraved_normal.png"
+        },
+        "minResolution": 4096,
+        "surfaceClass": "gold"
+      },
+      "cloth": {
+        "baseColor": [
+          0.012,
+          0.01,
+          0.015,
+          1
+        ],
+        "metallic": 0,
+        "roughness": 0.72,
+        "textures": {
+          "baseColor": "textures/black/cloth_basecolor.png",
+          "roughness": "textures/black/cloth_roughness.png",
+          "normal": "textures/black/cloth_normal.png"
+        },
+        "minResolution": 2048
+      }
+    },
+    "white": {
+      "armor": {
+        "baseColor": [
+          0.76,
+          0.68,
+          0.52,
+          1
+        ],
+        "metallic": 0,
+        "roughness": 0.28,
+        "textures": {
+          "baseColor": "textures/white/armor_basecolor.png",
+          "roughness": "textures/white/armor_roughness.png",
+          "metallic": "textures/white/armor_metallic.png",
+          "normal": "textures/white/armor_normal.png"
+        },
+        "minResolution": 4096,
+        "surfaceClass": "ivory",
+        "ior": 1.54,
+        "coatWeight": 0.1,
+        "coatRoughness": 0.22,
+        "subsurfaceWeight": 0.03
+      },
+      "gold": {
+        "baseColor": [
+          0.72,
+          0.43,
+          0.08,
+          1
+        ],
+        "metallic": 1,
+        "roughness": 0.18,
+        "textures": {
+          "baseColor": "textures/shared/gold_basecolor.png",
+          "roughness": "textures/shared/gold_roughness.png",
+          "metallic": "textures/shared/gold_metallic.png",
+          "normal": "textures/shared/gold_engraved_normal.png"
+        },
+        "minResolution": 4096,
+        "surfaceClass": "gold"
+      },
+      "cloth": {
+        "baseColor": [
+          0.61,
+          0.55,
+          0.43,
+          1
+        ],
+        "metallic": 0,
+        "roughness": 0.7,
+        "textures": {
+          "baseColor": "textures/white/cloth_basecolor.png",
+          "roughness": "textures/white/cloth_roughness.png",
+          "normal": "textures/white/cloth_normal.png"
+        },
+        "minResolution": 2048
+      }
+    }
+  },
+  "pieces": {
+    "king": {
+      "sourceMode": "sculpted-hybrid",
+      "minTriangles": 120000,
+      "minMeshObjects": 12,
+      "sources": [
+        "bodies/male_hero.fbx",
+        "faces/tumbo_metahuman_head.fbx",
+        "armor/king_armor.fbx",
+        "props/king_royal_staff.fbx",
+        "props/king_sword.fbx",
+        "cloth/king_cape.fbx"
+      ],
+      "requiredTags": [
+        "tall_crown",
+        "long_cape",
+        "royal_staff",
+        "sword_hip",
+        "armor",
+        "filigree",
+        "metahuman_tumbo"
+      ],
+      "rigidMounts": {
+        "royal_staff": "mixamorig:RightHand",
+        "sword_hip": "mixamorig:Hips",
+        "metahuman_tumbo": "mixamorig:Head",
+        "tall_crown": "mixamorig:Head"
+      },
+      "rigSource": "bodies/male_hero.fbx"
+    },
+    "queen": {
+      "sourceMode": "sculpted-hybrid",
+      "minTriangles": 120000,
+      "minMeshObjects": 12,
+      "sources": [
+        "bodies/female_regal.fbx",
+        "faces/queen_regal_metahuman_head.fbx",
+        "armor/queen_armor.fbx",
+        "props/queen_crook_staff.fbx",
+        "cloth/queen_cape.fbx",
+        "hair/queen_long_hair.fbx"
+      ],
+      "requiredTags": [
+        "feminine",
+        "elegant_crown",
+        "cape",
+        "crook_staff",
+        "long_hair",
+        "armor",
+        "filigree",
+        "metahuman_queen"
+      ],
+      "rigidMounts": {
+        "elegant_crown": "mixamorig:Head",
+        "crook_staff": "mixamorig:RightHand",
+        "metahuman_queen": "mixamorig:Head"
+      },
+      "rigSource": "bodies/female_regal.fbx"
+    },
+    "bishop": {
+      "sourceMode": "sculpted-hybrid",
+      "minTriangles": 110000,
+      "minMeshObjects": 11,
+      "sources": [
+        "bodies/male_hero.fbx",
+        "faces/tumbo_metahuman_head.fbx",
+        "armor/bishop_armor.fbx",
+        "props/bishop_crook_staff.fbx",
+        "cloth/bishop_cape.fbx"
+      ],
+      "requiredTags": [
+        "tall_mitre",
+        "crook_staff",
+        "cape",
+        "armor",
+        "filigree",
+        "metahuman_tumbo"
+      ],
+      "rigidMounts": {
+        "tall_mitre": "mixamorig:Head",
+        "crook_staff": "mixamorig:RightHand",
+        "metahuman_tumbo": "mixamorig:Head"
+      },
+      "rigSource": "bodies/male_hero.fbx"
+    },
+    "knight": {
+      "sourceMode": "sculpted-hybrid",
+      "minTriangles": 180000,
+      "minMeshObjects": 18,
+      "sources": [
+        "bodies/centaur_hero.fbx",
+        "faces/tumbo_metahuman_head.fbx",
+        "armor/knight_centaur_barding.fbx",
+        "props/knight_sword.fbx",
+        "props/knight_tower_shield.fbx"
+      ],
+      "requiredTags": [
+        "centaur",
+        "armored_legs",
+        "humanoid_torso",
+        "horse_head_helm",
+        "horse_barrel",
+        "four_legs",
+        "hooves",
+        "tail",
+        "sword",
+        "tower_shield",
+        "armor",
+        "filigree",
+        "metahuman_tumbo"
+      ],
+      "rigidMounts": {
+        "horse_head_helm": "mixamorig:Head",
+        "sword": "mixamorig:RightHand",
+        "tower_shield": "mixamorig:LeftHand",
+        "metahuman_tumbo": "mixamorig:Head"
+      },
+      "rigSource": "bodies/centaur_hero.fbx"
+    },
+    "rook": {
+      "sourceMode": "sculpted-hybrid",
+      "minTriangles": 140000,
+      "minMeshObjects": 15,
+      "sources": [
+        "bodies/male_hero.fbx",
+        "faces/tumbo_metahuman_head.fbx",
+        "armor/rook_siege_armor.fbx",
+        "props/rook_tower_shield.fbx",
+        "props/rook_massive_castle_staff.fbx",
+        "cloth/rook_cape.fbx"
+      ],
+      "requiredTags": [
+        "tower_pauldrons",
+        "tower_shield",
+        "cape",
+        "massive_castle_staff",
+        "battlements",
+        "side_turrets",
+        "gate",
+        "armor",
+        "filigree",
+        "metahuman_tumbo"
+      ],
+      "rigidMounts": {
+        "tower_shield": "mixamorig:LeftHand",
+        "massive_castle_staff": "mixamorig:RightHand",
+        "metahuman_tumbo": "mixamorig:Head"
+      },
+      "rigSource": "bodies/male_hero.fbx"
+    },
+    "pawn": {
+      "sourceMode": "sculpted-hybrid",
+      "minTriangles": 90000,
+      "minMeshObjects": 9,
+      "sources": [
+        "bodies/male_hero.fbx",
+        "faces/tumbo_metahuman_head.fbx",
+        "armor/pawn_armor.fbx",
+        "props/pawn_spear.fbx"
+      ],
+      "requiredTags": [
+        "kettle_helm",
+        "brim",
+        "spear",
+        "armor",
+        "filigree",
+        "metahuman_tumbo"
+      ],
+      "rigidMounts": {
+        "kettle_helm": "mixamorig:Head",
+        "spear": "mixamorig:RightHand",
+        "metahuman_tumbo": "mixamorig:Head"
+      },
+      "rigSource": "bodies/male_hero.fbx"
+    }
+  },
+  "texturePolicy": {
+    "source": "artist-authored or reviewed AI-assisted PBR maps",
+    "minimumResolution": "4096x4096 for hero armor/filigree, 2048x2048 minimum for cloth",
+    "rule": "No auto-generated map enters the forge until a human reviews seams, heraldry, anatomy-adjacent regions and faction consistency.",
+    "faceRule": "Tumbo likeness is authored through MetaHuman and baked/exported as a private head asset with authored skin maps. Direct projection of face.jpg onto geometry is forbidden."
+  }
+}

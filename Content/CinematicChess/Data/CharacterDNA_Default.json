@@ -1,31 +1,18 @@
 {
-  "characters": [
-    {
-      "id": "White_King",
-      "pieceType": "King",
-      "faction": "White",
-      "facePipeline": "MetaHuman"
-    },
-    {
-      "id": "Black_King",
-      "pieceType": "King",
-      "faction": "Black",
-      "facePipeline": "MetaHuman"
-    },
-    {
-      "id": "White_Knight",
-      "pieceType": "Knight",
-      "architecture": "Centaur"
-    },
-    {
-      "id": "Black_Knight",
-      "pieceType": "Knight",
-      "architecture": "Centaur"
-    },
-    {
-      "id": "Rook",
-      "pieceType": "Rook",
-      "weapon": "MassiveCastleStaff"
-    }
+  "version":"0.3",
+  "source":"Source/Schema/CinematicChessCharacterDNA.json",
+  "characters":[
+    {"id":"CHR_Black_King_01","pieceType":"King","faction":"Black","faceProfileID":"FACE_Tumbo_Male_01","armorSetID":"ARM_Black_SovereignPlate","materialSetID":"MAT_Black_ObsidianGold","weaponAttachmentID":"WPN_King_RoyalStaff","isCentaurArchitecture":false},
+    {"id":"CHR_White_King_01","pieceType":"King","faction":"White","faceProfileID":"FACE_Tumbo_Male_01","armorSetID":"ARM_White_SovereignPlate","materialSetID":"MAT_White_IvoryGold","weaponAttachmentID":"WPN_King_RoyalStaff","isCentaurArchitecture":false},
+    {"id":"CHR_Black_Queen_01","pieceType":"Queen","faction":"Black","faceProfileID":"FACE_Feminine_Regal_01","armorSetID":"ARM_Black_RegalPlate","materialSetID":"MAT_Black_ObsidianGold","weaponAttachmentID":"WPN_Queen_CrookStaff","isCentaurArchitecture":false},
+    {"id":"CHR_White_Queen_01","pieceType":"Queen","faction":"White","faceProfileID":"FACE_Feminine_Regal_01","armorSetID":"ARM_White_RegalPlate","materialSetID":"MAT_White_IvoryGold","weaponAttachmentID":"WPN_Queen_CrookStaff","isCentaurArchitecture":false},
+    {"id":"CHR_Black_Bishop_01","pieceType":"Bishop","faction":"Black","faceProfileID":"FACE_Tumbo_Male_01","armorSetID":"ARM_Black_ClericPlate","materialSetID":"MAT_Black_ObsidianGold","weaponAttachmentID":"WPN_Bishop_CrookStaff","isCentaurArchitecture":false},
+    {"id":"CHR_White_Bishop_01","pieceType":"Bishop","faction":"White","faceProfileID":"FACE_Tumbo_Male_01","armorSetID":"ARM_White_ClericPlate","materialSetID":"MAT_White_IvoryGold","weaponAttachmentID":"WPN_Bishop_CrookStaff","isCentaurArchitecture":false},
+    {"id":"CHR_Black_Knight_01","pieceType":"Knight","faction":"Black","faceProfileID":"FACE_Tumbo_Male_01","armorSetID":"ARM_Black_CentaurBarding","materialSetID":"MAT_Black_ObsidianGold","weaponAttachmentID":"WPN_Knight_Sword","isCentaurArchitecture":true},
+    {"id":"CHR_White_Knight_01","pieceType":"Knight","faction":"White","faceProfileID":"FACE_Tumbo_Male_01","armorSetID":"ARM_White_CentaurBarding","materialSetID":"MAT_White_IvoryGold","weaponAttachmentID":"WPN_Knight_Sword","isCentaurArchitecture":true},
+    {"id":"CHR_Black_Rook_01","pieceType":"Rook","faction":"Black","faceProfileID":"FACE_Tumbo_Male_01","armorSetID":"ARM_Black_SiegePlate","materialSetID":"MAT_Black_ObsidianGold","weaponAttachmentID":"WPN_Rook_MassiveCastleStaff","isCentaurArchitecture":false},
+    {"id":"CHR_White_Rook_01","pieceType":"Rook","faction":"White","faceProfileID":"FACE_Tumbo_Male_01","armorSetID":"ARM_White_SiegePlate","materialSetID":"MAT_White_IvoryGold","weaponAttachmentID":"WPN_Rook_MassiveCastleStaff","isCentaurArchitecture":false},
+    {"id":"CHR_Black_Pawn_01","pieceType":"Pawn","faction":"Black","faceProfileID":"FACE_Tumbo_Male_01","armorSetID":"ARM_Black_LineInfantry","materialSetID":"MAT_Black_ObsidianGold","weaponAttachmentID":"WPN_Pawn_Spear","isCentaurArchitecture":false},
+    {"id":"CHR_White_Pawn_01","pieceType":"Pawn","faction":"White","faceProfileID":"FACE_Tumbo_Male_01","armorSetID":"ARM_White_LineInfantry","materialSetID":"MAT_White_IvoryGold","weaponAttachmentID":"WPN_Pawn_Spear","isCentaurArchitecture":false}
   ]
 }

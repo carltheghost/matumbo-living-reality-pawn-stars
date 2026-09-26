@@ -1,46 +1,33 @@
-# Character DNA
+# Character DNA — Phase 1
 
-Character DNA is the stable identity record for each of the twelve cinematic chess pieces. The Cinematic Chess Entity Framework reads a piece's DNA at spawn time and resolves its face, armor, materials, weapon, and architecture flags. DNA is data, not geometry — the same DNA drives the Blender authoring side and the UE5.5.4 runtime side.
+Character DNA is the stable identity record for the twelve cinematic chess warriors. The forge and UE5 entity framework read the same identities; geometry is sculpted-hybrid rather than generated from primitives.
 
-Schema: `Source/Schema/CinematicChessCharacterDNA.json` (version 0.2). Twelve entries: `CHR_{Black|White}_{King|Queen|Bishop|Knight|Rook|Pawn}_01`.
+Canonical data: `Source/Schema/CinematicChessCharacterDNA.json` version 0.3.
 
-## DNA fields
+## Non-negotiable visual law
 
-- `id` — stable character ID, follows the asset naming rules (`CHR_[Faction]_[Piece]_[Variant]`).
-- `pieceType` / `faction` — King, Queen, Bishop, Knight, Rook, Pawn; Black or White.
-- `faceProfileID` — which face identity this piece wears; resolved through the MetaHuman facial pipeline.
-- `usesMetaHumanFace` — true for all twelve; every face is a MetaHuman face, never sculpted cartoon geometry.
-- `armorSetID` — armor set, `ARM_[Faction]_[Set]` (e.g. `ARM_Black_SovereignPlate`).
-- `materialSetID` — material set, `MAT_[Faction]_[Surface]` (e.g. `MAT_Black_ObsidianGold`).
-- `weaponAttachmentID` — weapon, `WPN_[Piece]_[Name]`, bound to `Socket_Weapon_R` (rooks: `Socket_CastleStaff`).
-- `isCentaurArchitecture` — true only for knights; when true, `centaurSpec` defines torso, helm, body, and locomotion.
-- `scale` — board-relative silhouette scale (pawn 0.95 → king 1.15, knight 1.2 with horse body).
+- **King** — tall crown, long cape, royal staff, sword at hip, heroic masculine face.
+- **Queen** — feminine always: elegant crown, long hair, cape, crook staff. Never Tumbo's face texture.
+- **Knight** — true centaur: humanoid armored warrior torso in a horse-head helm on a complete horse body with barrel, four armored legs, hooves and tail. Sword + tower shield.
+- **Bishop** — tall mitre, crook staff, cape, heroic masculine face.
+- **Rook** — tower pauldrons, tower shield, cape, and staff crowned by a **massive castle** with battlements, side turrets and a visible gate. Heroic masculine face.
+- **Pawn** — kettle helm with brim, spear, heroic masculine face.
+- **All twelve** — full-body armor, gold filigree/trim, photoreal PBR only.
 
-## Male human likeness rules
+## Factions
 
-Male human-headed pieces (king, bishop, rook, pawn, and the knight's warrior torso) use Tumbo's approved face reference `FACE_Tumbo_Male_01` through the MetaHuman facial pipeline. Rules:
+Black resolves to obsidian + gold filigree. White resolves to ivory + gold. No third costume palette is introduced by individual roles.
 
-1. The face reference is the single approved likeness — no invented male faces.
-2. The MetaHuman head sits under the helm at all times (`Socket_Helm`); helms never replace the head.
-3. **No face-bearing asset ships publicly without Tumbo's explicit approval.** This includes screenshots, videos, and demo builds.
+## Face law
 
-## Queen identity rules
+King, Bishop, Knight warrior torso, Rook and Pawn use the local approved Tumbo identity reference (`FACE_Tumbo_Male_01`) only through the privacy-gated MetaHuman pipeline. `face.jpg` is local input and must never be committed or copied into the repository without explicit Tumbo publication approval.
 
-Queens carry a separate feminine MetaHuman identity, `FACE_Feminine_Regal_01`:
+Queens use `FACE_Feminine_Regal_01`; they are deliberately distinct from the male identity and never consume `face.jpg`.
 
-1. Queens never use the male face reference.
-2. Feminine armor silhouette: regal plate, narrower pauldrons, war-fan blades (`WPN_Queen_WarFanBlades`).
-3. Same faction material law as the rest of the army — obsidian + gold filigree (black) or ivory + gold (white).
+## Rig law
 
-## Centaur knight rules
+Every export is Mixamo-namespaced (`mixamorig:*`). Biped roles carry the standard Mixamo hierarchy. Centaur knights keep the humanoid Mixamo upper-body contract and extend it with `mixamorig:Horse*` bones for horse pelvis/spine/legs/tail. A knight with only two legs is invalid.
 
-Knights are full centaurs, flagged `isCentaurArchitecture: true`:
+## Forge law
 
-1. Humanoid warrior torso wearing the male face reference under a horse-head helm (`HorseHeadHelm_Obsidian` / `HorseHeadHelm_Ivory`).
-2. Full horse body with armored barding — not a horse head on a human body.
-3. Quadruped locomotion: dedicated blend space (`QuadrupedIdle`, `QuadrupedGallop`); the knight rears on capture strike.
-4. Barding sockets `Socket_Barding_Front` / `Socket_Barding_Hind_Equine` carry the armor plates.
-
-## Photoreal bar
-
-Every DNA entry must resolve to photoreal PBR assets. Anything that reads cartoon — toon shading, stylized proportions, dream-render geometry — fails the DNA and goes back.
+`Pipeline/Blender/chess_forge.py` consumes sculpted source meshes, reviewed PBR maps and already-authored skin weights. It rejects placeholder/proxy/lowpoly/primitive character objects, missing signature parts, low detail, bad materials and bad rigs. Private review previews are actual renders of the assembled asset, never concept-art stand-ins.
