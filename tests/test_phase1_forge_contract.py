@@ -68,17 +68,28 @@ class Phase1ForgeContractTests(unittest.TestCase):
         self.assertIn("export_lights=False", source)
         self.assertIn("_export_glb(target, imported, arm)", source)
 
-    def test_private_face_binding_is_scoped_to_current_assembly(self):
+    def test_private_face_uses_baked_metahuman_not_photo_projection(self):
         source=FORGE.read_text(encoding="utf-8")
-        self.assertIn("_apply_private_face_preview(target, imported)", source)
-        self.assertIn("for slot in obj.material_slots", source)
-        self.assertNotIn('m for m in bpy.data.materials if m.name == "PRIVATE_FACE_PREVIEW"', source)
+        self.assertIn("_validate_private_metahuman_identity(target, imported)", source)
+        self.assertIn("metahuman_tumbo", source.lower())
+        self.assertNotIn("_load_image(target.face_image", source)
+        self.assertNotIn("PRIVATE_FACE_IMAGE", source)
+
+    def test_modular_source_pack_uses_one_donor_mixamo_rig(self):
+        source=FORGE.read_text(encoding="utf-8")
+        data=json.loads(MANIFEST.read_text(encoding="utf-8"))
+        self.assertIn("def _import_source_pack(", source)
+        self.assertIn("def _retarget_secondary_armatures(", source)
+        for piece, spec in data["pieces"].items():
+            self.assertIn(spec["rigSource"], spec["sources"])
+        self.assertIn('getattr(b, "use_deform", True)', source)
 
     def test_queen_explicitly_rejects_private_male_face_assets(self):
         source=FORGE.read_text(encoding="utf-8")
         self.assertIn("_validate_queen_face_policy(target, imported)", source)
         self.assertIn("queen character law forbids Tumbo/private male-face assets", source)
         self.assertIn("private_face_preview", source.lower())
+        self.assertIn("metahuman_tumbo", source.lower())
 
     def test_deforming_meshes_require_export_rig_weights(self):
         source=FORGE.read_text(encoding="utf-8")
