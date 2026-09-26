@@ -13,6 +13,7 @@ import pathlib
 from typing import Any
 
 PIECES = ("king", "queen", "bishop", "knight", "rook", "pawn")
+COMMON_LAW = {"armor", "filigree"}
 
 LAW = {
     "king": {"tall_crown", "long_cape", "royal_staff", "sword_hip"},
@@ -114,7 +115,7 @@ def validate_data(m: dict[str, Any]) -> list[str]:
     for piece in PIECES:
         spec = pieces.get(piece, {})
         tags = set(spec.get("requiredTags", []))
-        missing_law = LAW[piece] - tags
+        missing_law = (LAW[piece] | COMMON_LAW) - tags
         if missing_law:
             errors.append(f"{piece}: missing law tags {sorted(missing_law)}")
 
