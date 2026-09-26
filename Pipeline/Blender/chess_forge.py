@@ -385,6 +385,32 @@ def _validate_piece_law(target: BuildTarget, objects: Iterable[Any]) -> None:
         )
 
 
+
+def _validate_queen_face_policy(target: BuildTarget, objects: Iterable[Any]) -> None:
+    """Queens are always feminine and may never carry Tumbo/private-face assets."""
+    if target.piece != "queen":
+        return
+    violations: list[str] = []
+    for obj in objects:
+        lower_name = obj.name.lower()
+        if "tumbo_face" in lower_name or "male_face" in lower_name:
+            violations.append(obj.name)
+        if obj.type != "MESH":
+            continue
+        for slot in obj.material_slots:
+            mat = slot.material
+            if mat is None:
+                continue
+            name = mat.name.lower()
+            if name == "private_face_preview" or name.startswith("private_face_preview."):
+                violations.append(f"{obj.name}:{mat.name}")
+    if violations:
+        raise ForgeError(
+            f"{target.slug}: queen character law forbids Tumbo/private male-face assets: "
+            + ", ".join(violations[:8])
+        )
+
+
 def _geometry_stats(objects: Iterable[Any]) -> tuple[int, int]:
     verts = 0
     tris = 0
@@ -570,6 +596,7 @@ def _build_one(
         imported.extend(_import_asset(_resolve_source(target.source_root, rel)))
 
     _validate_piece_law(target, imported)
+    _validate_queen_face_policy(target, imported)
     _validate_geometry(target, imported)
     arm = _find_armature(imported)
     _validate_mixamo(arm, target.piece)
