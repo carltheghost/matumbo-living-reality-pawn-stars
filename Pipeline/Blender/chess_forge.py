@@ -39,14 +39,21 @@ except Exception:  # pragma: no cover
 PIECE_ORDER = ("king", "queen", "bishop", "knight", "rook", "pawn")
 FACTIONS = ("black", "white")
 MALE_PIECES = frozenset({"king", "bishop", "knight", "rook", "pawn"})
-REQUIRED_MIXAMO_BONES = (
+REQUIRED_MIXAMO_UPPER = (
     "mixamorig:Hips", "mixamorig:Spine", "mixamorig:Spine1",
     "mixamorig:Spine2", "mixamorig:Neck", "mixamorig:Head",
     "mixamorig:LeftShoulder", "mixamorig:LeftArm", "mixamorig:LeftForeArm",
     "mixamorig:LeftHand", "mixamorig:RightShoulder", "mixamorig:RightArm",
-    "mixamorig:RightForeArm", "mixamorig:RightHand", "mixamorig:LeftUpLeg",
-    "mixamorig:LeftLeg", "mixamorig:LeftFoot", "mixamorig:RightUpLeg",
-    "mixamorig:RightLeg", "mixamorig:RightFoot",
+    "mixamorig:RightForeArm", "mixamorig:RightHand",
+)
+REQUIRED_MIXAMO_BIPED_LEGS = (
+    "mixamorig:LeftUpLeg", "mixamorig:LeftLeg", "mixamorig:LeftFoot",
+    "mixamorig:RightUpLeg", "mixamorig:RightLeg", "mixamorig:RightFoot",
+)
+REQUIRED_CENTAUR_BONES = (
+    "mixamorig:HorsePelvis", "mixamorig:HorseSpine", "mixamorig:HorseTail01",
+    "mixamorig:HorseFrontLegL", "mixamorig:HorseFrontLegR",
+    "mixamorig:HorseHindLegL", "mixamorig:HorseHindLegR",
 )
 
 class ForgeError(RuntimeError):
@@ -105,7 +112,7 @@ def _args(argv: list[str]) -> argparse.Namespace:
     p.add_argument("--face-image")
     p.add_argument("--publish-approved", action="store_true",
                    help="Explicit Tumbo approval gate for face-bearing public artifacts")
-    p.add_argument("--cycles-samples", type=int, default=192)
+    p.add_argument("--cycles-samples", type=int, default=256)
     return p.parse_args(argv)
 
 
@@ -185,23 +192,76 @@ def _find_armature(objects: Iterable[Any]) -> Any:
     return arms[0]
 
 
+def _retarget_secondary_armatures(
+    primary: Any, imported: list[Any], slug: str
+) -> list[Any]:
+    """Collapse modular FBX armatures onto the selected donor Mixamo rig."""
+    secondary_arms = [o for o in imported if o.type == "ARMATURE"]
+    primary_names = {b.name for b in primary.data.bones}
+    for mesh in [o for o in imported if o.type == "MESH"]:
+        weighted_names = {
+            mesh.vertex_groups[assignment.group].name
+            for vertex in mesh.data.vertices
+            for assignment in vertex.groups
+            if assignment.weight > 0
+        }
+        missing = sorted(
+            name for name in weighted_names
+            if name.startswith("mixamorig:") and name not in primary_names
+        )
+        if missing:
+            raise ForgeError(
+                f"{slug}: modular mesh {mesh.name} uses bones absent from donor rig: "
+                f"{missing[:12]}"
+            )
+        world = mesh.matrix_world.copy()
+        for mod in mesh.modifiers:
+            if mod.type == "ARMATURE" and mod.object in secondary_arms:
+                mod.object = primary
+        if mesh.parent in secondary_arms:
+            mesh.parent = primary
+            mesh.matrix_world = world
+    return [o for o in imported if o.type != "ARMATURE"]
+
+
+def _import_source_pack(target: BuildTarget) -> tuple[list[Any], Any]:
+    sources = list(target.spec.get("sources", []))
+    rig_source = target.spec.get("rigSource")
+    if not sources:
+        raise ForgeError(f"{target.slug}: no source sculpts listed")
+    if not rig_source or rig_source not in sources:
+        raise ForgeError(f"{target.slug}: rigSource must name one entry from sources")
+
+    donor_batch = _import_asset(_resolve_source(target.source_root, rig_source))
+    donor = _find_armature(donor_batch)
+    imported: list[Any] = list(donor_batch)
+    for rel in sources:
+        if rel == rig_source:
+            continue
+        batch = _import_asset(_resolve_source(target.source_root, rel))
+        imported.extend(_retarget_secondary_armatures(donor, batch, target.slug))
+    return imported, donor
+
+
 def _validate_mixamo(armature: Any, piece: str) -> None:
-    names = {b.name for b in armature.data.bones}
-    missing = [n for n in REQUIRED_MIXAMO_BONES if n not in names]
+    bones = list(armature.data.bones)
+    names = {b.name for b in bones}
+    required = list(REQUIRED_MIXAMO_UPPER)
+    required.extend(
+        REQUIRED_CENTAUR_BONES if piece == "knight" else REQUIRED_MIXAMO_BIPED_LEGS
+    )
+    missing = [name for name in required if name not in names]
     if missing:
         raise ForgeError(f"{piece}: Mixamo rig missing bones: {', '.join(missing)}")
-    bad = sorted(n for n in names if not n.startswith("mixamorig:"))
+    bad = sorted(
+        b.name for b in bones
+        if getattr(b, "use_deform", True) and not b.name.startswith("mixamorig:")
+    )
     if bad:
-        raise ForgeError(f"{piece}: every deform/export bone must use mixamorig:* naming; bad={bad[:8]}")
-    if piece == "knight":
-        equine = {
-            "mixamorig:HorsePelvis", "mixamorig:HorseSpine", "mixamorig:HorseTail01",
-            "mixamorig:HorseFrontLegL", "mixamorig:HorseFrontLegR",
-            "mixamorig:HorseHindLegL", "mixamorig:HorseHindLegR",
-        }
-        miss = sorted(equine - names)
-        if miss:
-            raise ForgeError(f"knight: centaur rig missing equine extension bones: {', '.join(miss)}")
+        raise ForgeError(
+            f"{piece}: every deform/export bone must use mixamorig:* naming; "
+            f"bad={bad[:8]}"
+        )
 
 
 def _material(name: str, base_rgba: tuple[float, float, float, float],
@@ -270,14 +330,17 @@ def _build_pbr_material(name: str, spec: dict[str, Any], root: pathlib.Path) -> 
 
 
 def _assign_material_by_tag(objects: Iterable[Any], tag: str, mat: Any) -> int:
+    """Swap only tagged material regions, preserving skin and hair materials."""
     count = 0
-    tag = tag.lower()
+    needle = tag.lower()
     for obj in objects:
-        if obj.type != "MESH" or tag not in obj.name.lower():
+        if obj.type != "MESH":
             continue
-        obj.data.materials.clear()
-        obj.data.materials.append(mat)
-        count += 1
+        for slot in obj.material_slots:
+            current = slot.material
+            if current is not None and needle in current.name.lower():
+                slot.material = mat
+                count += 1
     return count
 
 
@@ -299,7 +362,7 @@ def _apply_faction_look(target: BuildTarget, objects: list[Any], manifest: dict[
     }
     if assigned["armor"] == 0 or assigned["gold"] == 0:
         raise ForgeError(
-            f"{target.slug}: source meshes must expose ARMOR and FILIGREE tagged objects"
+            f"{target.slug}: source materials must expose ARMOR and FILIGREE tagged slots"
         )
 
 
@@ -456,47 +519,32 @@ def _validate_geometry(target: BuildTarget, objects: list[Any]) -> None:
         )
 
 
-def _apply_private_face_preview(target: BuildTarget, objects: Iterable[Any]) -> None:
+def _validate_private_metahuman_identity(
+    target: BuildTarget, objects: Iterable[Any]
+) -> None:
+    """Require a baked private MetaHuman likeness; never project face.jpg."""
     if not target.is_male:
         return
     if target.face_image is None or not target.face_image.exists():
         raise ForgeError(
-            f"{target.slug}: local face.jpg is required for private male-piece review"
+            f"{target.slug}: local face.jpg is required as private likeness provenance"
         )
-    face_mats = []
+    object_names = " ".join(o.name.lower() for o in objects)
+    if "metahuman_tumbo" not in object_names:
+        raise ForgeError(
+            f"{target.slug}: male assembly must include a baked METAHUMAN_TUMBO "
+            "head generated from the approved private reference"
+        )
     for obj in objects:
         if obj.type != "MESH":
             continue
         for slot in obj.material_slots:
             mat = slot.material
-            if (
-                mat is not None
-                and (
-                    mat.name == "PRIVATE_FACE_PREVIEW"
-                    or mat.name.startswith("PRIVATE_FACE_PREVIEW.")
+            if mat and "private_face_preview" in mat.name.lower():
+                raise ForgeError(
+                    f"{target.slug}: flat face-photo materials are forbidden; "
+                    "use the baked private MetaHuman head and authored skin maps"
                 )
-                and mat not in face_mats
-            ):
-                face_mats.append(mat)
-    if not face_mats:
-        raise ForgeError(
-            f"{target.slug}: source face must expose PRIVATE_FACE_PREVIEW material"
-        )
-    img = _load_image(target.face_image, non_color=False)
-    for mat in face_mats:
-        mat.use_nodes = True
-        nt = mat.node_tree
-        bsdf = nt.nodes.get("Principled BSDF")
-        if bsdf is None:
-            raise ForgeError(
-                f"{target.slug}: PRIVATE_FACE_PREVIEW lacks Principled BSDF"
-            )
-        tex = nt.nodes.get("PRIVATE_FACE_IMAGE") or nt.nodes.new("ShaderNodeTexImage")
-        tex.name = "PRIVATE_FACE_IMAGE"
-        tex.image = img
-        nt.links.new(tex.outputs["Color"], bsdf.inputs["Base Color"])
-    # Source face.jpg is never copied by this script. Private review outputs
-    # live outside the repository; approved publication is a separate command.
 
 
 def _world_bounds(objects: Iterable[Any]) -> tuple[Any, Any, Any]:
@@ -695,22 +743,16 @@ def _build_one(
     target: BuildTarget, manifest: dict[str, Any], samples: int
 ) -> None:
     _reset_scene()
-    imported: list[Any] = []
-    source_files = target.spec.get("sources", [])
-    if not source_files:
-        raise ForgeError(f"{target.slug}: no source sculpts listed")
-    for rel in source_files:
-        imported.extend(_import_asset(_resolve_source(target.source_root, rel)))
+    imported, arm = _import_source_pack(target)
 
     _validate_piece_law(target, imported)
     _validate_queen_face_policy(target, imported)
     _validate_geometry(target, imported)
-    arm = _find_armature(imported)
     _validate_mixamo(arm, target.piece)
     rigid = _attach_rigid_parts(target, imported, arm)
     _parent_weighted_to_armature(imported, arm, rigid)
     _apply_faction_look(target, imported, manifest)
-    _apply_private_face_preview(target, imported)
+    _validate_private_metahuman_identity(target, imported)
     _setup_cinematic_scene(target, imported, samples)
     _render_preview(target)
     _export_glb(target, imported, arm)
