@@ -63,14 +63,32 @@ def validate(path: pathlib.Path) -> list[str]:
         if IDENTITY[p] not in tags:
             errors.append(f"{p}: missing private MetaHuman identity tag {IDENTITY[p]!r}")
         for source in sources:
-            if not _safe_relative(source): errors.append(f"{p}: unsafe source path {source!r}")
+            if not _safe_relative(source):
+                errors.append(f"{p}: unsafe source path {source!r}")
+            if pathlib.PurePosixPath(str(source).replace("\\", "/")).name.lower() == "face.jpg":
+                errors.append(f"{p}: raw face.jpg may never be a forge source")
+        source_text=" ".join(str(x).lower().replace("\\", "/") for x in sources)
+        if p == "queen" and any(token in source_text for token in ("tumbo_metahuman", "tumbo_face", "male_face")):
+            errors.append("queen: Tumbo/male likeness source is forbidden")
+        if p != "queen" and "faces/tumbo_metahuman_head.fbx" not in source_text:
+            errors.append(f"{p}: missing Tumbo MetaHuman head source")
+        if p == "queen" and "faces/queen_regal_metahuman_head.fbx" not in source_text:
+            errors.append("queen: missing dedicated feminine MetaHuman head source")
         if int(s.get("minTriangles",0)) < 80000: errors.append(f"{p}: cinematic triangle floor < 80k")
         rigid=set(s.get("rigidMounts",{}))
         missing_rigid=RIGID[p]-rigid
         if missing_rigid: errors.append(f"{p}: missing rigid mounts {sorted(missing_rigid)}")
+    expected_surface={"black":"obsidian","white":"ivory"}
     for faction in ("black","white"):
         fs=m.get("materials",{}).get(faction,{})
         if "gold" not in fs or "armor" not in fs: errors.append(f"{faction}: missing armor/gold material spec")
+        armor=fs.get("armor",{})
+        if armor.get("surfaceClass") != expected_surface[faction]:
+            errors.append(f"{faction}: armor surfaceClass must be {expected_surface[faction]}")
+        if float(armor.get("metallic",1.0)) > 0.05:
+            errors.append(f"{faction}: {expected_surface[faction]} armor must be dielectric, not metallic")
+        if fs.get("gold",{}).get("surfaceClass") != "gold":
+            errors.append(f"{faction}: filigree surfaceClass must be gold")
         for material_name, floor in (("armor",4096),("gold",4096),("cloth",2048)):
             ms=fs.get(material_name,{})
             if int(ms.get("minResolution",0)) < floor:
@@ -79,6 +97,8 @@ def validate(path: pathlib.Path) -> list[str]:
             for slot, source in tex.items():
                 if not _safe_relative(source):
                     errors.append(f"{faction}/{material_name}/{slot}: unsafe texture path {source!r}")
+                if pathlib.PurePosixPath(str(source).replace("\\", "/")).name.lower() == "face.jpg":
+                    errors.append(f"{faction}/{material_name}/{slot}: raw face.jpg texture is forbidden")
             if material_name in {"armor","gold"} and not {"baseColor","roughness","metallic","normal"}.issubset(tex):
                 errors.append(f"{faction}/{material_name}: incomplete PBR texture set")
     if m.get("privacy",{}).get("maleFacePublicByDefault", True): errors.append("maleFacePublicByDefault must be false")
