@@ -10,11 +10,11 @@ Procedural primitives can establish scale and socket layout, but they cannot cre
 
 ## Real production pipeline
 
-1. **Sculpt / source pack** — Artist-authored or high-resolution sculpted body, armor, cloth, hair and prop meshes live on Tumbo's PC under `TUMBO_CHESS_SOURCE_ROOT`. MetaHuman-derived face/body assets stay local when licensing/privacy requires it.
+1. **Sculpt / source pack** — Artist-authored or high-resolution sculpted body, armor, cloth, hair and prop meshes live on Tumbo's PC under `TUMBO_CHESS_SOURCE_ROOT`. Tumbo's `face.jpg` is used upstream to author a private MetaHuman likeness; the forge consumes a baked/exported `METAHUMAN_TUMBO` head with authored skin maps, never the photograph as a diffuse texture. The Queen uses a separate feminine `METAHUMAN_QUEEN` head.
 2. **Character-law assembly** — `chess_forge.py` imports the exact modular parts for the selected role. It fails if signature parts are missing: crown/staff/cape/sword for King; feminine crown/crook/long hair for Queen; full four-legged centaur anatomy + sword/tower shield for Knight; mitre/crook/cape for Bishop; tower pauldrons/tower shield/massive castle staff with battlements, side turrets and gate for Rook; kettle helm + spear for Pawn.
-3. **Rig gate** — Export skeleton must contain the standard `mixamorig:*` biped bones. Centaur knights add `mixamorig:Horse*` extension bones; all exported deform bones still use the `mixamorig:` namespace.
-4. **Look-dev / texture pass** — PBR faction materials are applied to tagged sculpt meshes (`ARMOR`, `FILIGREE`, `CAPE`). The manifest points at authored or reviewed AI-assisted base-color/roughness/metallic/normal maps. Texture generation itself is external to the forge; the forge consumes reviewed maps and never invents a face texture.
-5. **Private face review** — Male pieces read `face.jpg` only from `--face-image`. Until Tumbo approves publication, **all twelve** GLBs and PNGs are written to a local private review directory outside the repository. The script never copies `face.jpg` into Git.
+3. **Rig gate** — Each role names one `rigSource` donor. Modular FBX parts may arrive with duplicate armatures; the forge retargets compatible weighted meshes onto the donor before export. Biped roles require the standard Mixamo body hierarchy. The centaur keeps the Mixamo upper body and uses `mixamorig:Horse*` pelvis/spine/leg/tail extensions instead of fake human legs. Every exported deform bone must use the `mixamorig:` namespace; non-deforming authoring/control bones may remain.
+4. **Look-dev / texture pass** — PBR faction materials are applied to tagged material slots (`ARMOR`, `FILIGREE`, `CAPE`) so skin, eyes and hair materials survive untouched. The manifest points at authored or reviewed AI-assisted base-color/roughness/metallic/normal maps. Texture generation itself is external to the forge; the forge consumes reviewed maps and never invents a face texture.
+5. **Private likeness review** — Male pieces require `face.jpg` only as local provenance that the private MetaHuman head was authored from the approved reference. The forge never loads the photo into a shader. Until Tumbo approves publication, **all twelve** GLBs and PNGs are written to a local private review directory outside the repository. Neither `face.jpg` nor the private MetaHuman source pack belongs in Git.
 6. **Actual preview render** — The preview is rendered from the assembled 3D asset at 2048×2048 in a dark reflective board scene with warm key, cool fill and blue rim. Framing is computed from the real assembly bounds so the wide centaur and tall castle staff cannot be silently cropped. Concept art cannot masquerade as a forge result.
 7. **GLB export + QC** — The same assembled asset is exported after geometry, authored-UV, character-law, material and rig gates pass. Every piece also writes a private `qc-{faction}-{piece}.json` receipt with geometry counts plus SHA-256 hashes and byte sizes for the exact PNG/GLB pair.
 8. **Twelve-piece review gate** — `run_phase1_review.ps1` executes both armies, requires all 12 PNGs + GLBs + QC receipts, writes a private `phase1-review-manifest.json`, and builds `phase1-review.html` so Tumbo can inspect the complete set in one local board.
@@ -31,6 +31,8 @@ TUMBO_CHESS_SOURCE_ROOT/
   bodies/male_hero.fbx
   bodies/female_regal.fbx
   bodies/centaur_hero.fbx
+  faces/tumbo_metahuman_head.fbx
+  faces/queen_regal_metahuman_head.fbx
   armor/{king_armor,queen_armor,bishop_armor,knight_centaur_barding,rook_siege_armor,pawn_armor}.fbx
   cloth/{king_cape,queen_cape,bishop_cape,rook_cape}.fbx
   hair/queen_long_hair.fbx
@@ -46,7 +48,7 @@ TUMBO_CHESS_SOURCE_ROOT/
   textures/{black,white,shared}/...
 ```
 
-Source object names must contain the required manifest tags. That makes visual-law failures machine-detectable instead of depending on optimism.
+Source object names must contain the silhouette/identity tags from the manifest (`METAHUMAN_TUMBO`, `METAHUMAN_QUEEN`, `tower_pauldrons`, `horse_barrel`, and so on). Armor meshes must expose `ARMOR`, `FILIGREE`, and where applicable `CAPE` material-slot names. The forge uses those slots rather than replacing whole meshes, because deleting skin and hair materials in the name of automation would be a fairly spectacular own goal.
 
 ## PC commands
 
@@ -54,6 +56,7 @@ Source object names must contain the required manifest tags. That makes visual-l
 $env:BLENDER_EXE='C:\Program Files\Blender Foundation\Blender 4.2\blender.exe'
 $env:TUMBO_CHESS_SOURCE_ROOT='D:\maTumbo\cinematic-chess-source'
 $env:TUMBO_FACE_IMAGE='D:\maTumbo\private\face.jpg'
+.\Pipeline\Blender\preflight_phase1.ps1
 .\Pipeline\Blender\run_black.ps1
 .\Pipeline\Blender\run_white.ps1
 
@@ -79,6 +82,8 @@ All twelve must pass before demo integration:
 - cinematic triangle/detail floor and authored-UV gates pass;
 - preview is 2048×2048 and adaptively frames the complete silhouette;
 - every output pair has a matching PASS QC receipt and SHA-256 hash;
+- baked MetaHuman identity gate passes; direct `face.jpg` projection is forbidden;
+- one donor Mixamo rig absorbs compatible modular weighted assets;
 - obsidian/ivory + gold filigree material law passes;
 - `mixamorig:*` rig passes; centaur equine extension passes;
 - Tumbo approves each private preview;
