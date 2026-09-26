@@ -20,6 +20,53 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Reject private likeness sources from Git
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git ls-files | grep -Eiq '(^|/)(face\.jpg|tumbo_metahuman_head\.fbx)        run: python -m py_compile Pipeline/Blender/chess_forge.py Pipeline/Blender/forge_contract.py
+      - name: Validate forge manifest
+        run: python Pipeline/Blender/forge_contract.py Pipeline/Blender/forge_manifest.json
+      - name: Run Phase 1 contract tests
+        run: python -m unittest tests.test_phase1_forge_contract -v
+      - name: Parse PowerShell forge runners
+        shell: pwsh
+        run: |
+          $errors = @()
+          Get-ChildItem Pipeline/Blender/*.ps1 | ForEach-Object {
+            $tokens = $null
+            $parseErrors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$tokens, [ref]$parseErrors) | Out-Null
+            if ($parseErrors) { $errors += $parseErrors }
+          }
+          if ($errors.Count -gt 0) {
+            $errors | Format-List | Out-String | Write-Error
+            exit 1
+          }
+; then
+            echo "Private likeness source is tracked by Git. Refusing Phase 1." >&2
+            git ls-files | grep -Ei '(^|/)(face\.jpg|tumbo_metahuman_head\.fbx)        run: python -m py_compile Pipeline/Blender/chess_forge.py Pipeline/Blender/forge_contract.py
+      - name: Validate forge manifest
+        run: python Pipeline/Blender/forge_contract.py Pipeline/Blender/forge_manifest.json
+      - name: Run Phase 1 contract tests
+        run: python -m unittest tests.test_phase1_forge_contract -v
+      - name: Parse PowerShell forge runners
+        shell: pwsh
+        run: |
+          $errors = @()
+          Get-ChildItem Pipeline/Blender/*.ps1 | ForEach-Object {
+            $tokens = $null
+            $parseErrors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$tokens, [ref]$parseErrors) | Out-Null
+            if ($parseErrors) { $errors += $parseErrors }
+          }
+          if ($errors.Count -gt 0) {
+            $errors | Format-List | Out-String | Write-Error
+            exit 1
+          }
+ >&2 || true
+            exit 1
+          fi
       - name: Syntax check forge
         run: python -m py_compile Pipeline/Blender/chess_forge.py Pipeline/Blender/forge_contract.py
       - name: Validate forge manifest
