@@ -38,8 +38,8 @@ foreach($side in $factions){
 
     $previewPath=Join-Path $review ([string]$qc.outputs.preview.file)
     $glbPath=Join-Path $review ([string]$qc.outputs.glb.file)
-    if(-not (Test-Path $previewPath)){ throw "Missing preview for $slug: $previewPath" }
-    if(-not (Test-Path $glbPath)){ throw "Missing GLB for $slug: $glbPath" }
+    if(-not (Test-Path $previewPath)){ throw "Missing preview for ${slug}: $previewPath" }
+    if(-not (Test-Path $glbPath)){ throw "Missing GLB for ${slug}: $glbPath" }
 
     $previewHash=(Get-FileHash -Algorithm SHA256 $previewPath).Hash.ToLowerInvariant()
     $glbHash=(Get-FileHash -Algorithm SHA256 $glbPath).Hash.ToLowerInvariant()
