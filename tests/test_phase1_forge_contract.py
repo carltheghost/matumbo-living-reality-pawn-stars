@@ -10,6 +10,8 @@ MODULE = ROOT / "Pipeline" / "Blender" / "forge_contract.py"
 MANIFEST = ROOT / "Pipeline" / "Blender" / "forge_manifest.json"
 FORGE = ROOT / "Pipeline" / "Blender" / "chess_forge.py"
 PUBLISH = ROOT / "Pipeline" / "Blender" / "publish_approved.ps1"
+PROMOTE = ROOT / "Pipeline" / "Blender" / "promote_approved.ps1"
+APPROVE = ROOT / "Pipeline" / "Blender" / "approve_review.ps1"
 REVIEW_RUNNER = ROOT / "Pipeline" / "Blender" / "run_phase1_review.ps1"
 RUNNERS = [
     ROOT / "Pipeline" / "Blender" / "run_black.ps1",
@@ -118,21 +120,34 @@ class Phase1ForgeContractTests(unittest.TestCase):
         self.assertIn("preview-$slug.png", review)
         self.assertIn("qc-$slug.json", review)
 
-    def test_private_paths_and_all_twelve_publication_are_enforced(self):
+    def test_private_paths_and_exact_reviewed_publication_are_enforced(self):
         source=FORGE.read_text(encoding="utf-8")
         self.assertIn("Private review root must stay outside the repository", source)
         self.assertIn("Private face input must stay outside the repository", source)
+        self.assertNotIn("--publish-approved", source)
+        self.assertIn("return True", source)
         for runner in RUNNERS:
             self.assertIn("--repository-root", runner.read_text(encoding="utf-8"))
+
+        approve=APPROVE.read_text(encoding="utf-8")
+        self.assertIn("IApproveAll12", approve)
+        self.assertIn("approval.json", approve)
+        self.assertIn("Get-FileHash -Algorithm SHA256", approve)
+        self.assertIn("approvedBy='Tumbo'", approve)
+        self.assertIn("$artifacts.Count -ne 12", approve)
+
+        promote=PROMOTE.read_text(encoding="utf-8")
+        self.assertIn("[ValidateSet('all')]", promote)
+        self.assertIn("TUMBO_FACE_PUBLICATION_APPROVED", promote)
+        self.assertIn("approval.json", promote)
+        self.assertIn("Get-FileHash -Algorithm SHA256", promote)
+        self.assertIn("$approved.Count -ne 24", promote)
+        self.assertIn("Copy-Item -Force", promote)
+        self.assertNotIn("--publish-approved", promote)
+        self.assertNotIn("BLENDER_EXE", promote)
+
         publish=PUBLISH.read_text(encoding="utf-8")
-        self.assertIn("[ValidateSet('all')]", publish)
-        self.assertIn("phase1-review-manifest.json", publish)
-        self.assertIn("Get-FileHash -Algorithm SHA256", publish)
-        self.assertIn("sourceReviewManifestSha256", publish)
-        self.assertIn("TUMBO_EXPLICIT_VISUAL_APPROVAL", publish)
-        self.assertIn(".phase1-approved-staging", publish)
-        self.assertIn("Publication transaction incomplete", publish)
-        self.assertIn("$installed", publish)
+        self.assertIn("promote_approved.ps1", publish)
         self.assertNotIn("--publish-approved", publish)
         self.assertNotIn("BLENDER_EXE", publish)
 
