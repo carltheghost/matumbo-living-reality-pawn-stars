@@ -21,7 +21,9 @@ copied into the repository by this script.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import math
 import pathlib
 import sys
 from dataclasses import dataclass
@@ -83,6 +85,11 @@ class BuildTarget:
     def glb_path(self) -> pathlib.Path:
         root = self.private_review_root if self.private_mode else self.output_root
         return root / f"{self.slug}.glb"
+
+    @property
+    def qc_path(self) -> pathlib.Path:
+        root = self.private_review_root if self.private_mode else self.output_root
+        return root / f"qc-{self.slug}.json"
 
 
 def _args(argv: list[str]) -> argparse.Namespace:
@@ -430,9 +437,23 @@ def _validate_geometry(target: BuildTarget, objects: list[Any]) -> None:
         raise ForgeError(
             f"{target.slug}: {tris:,} triangles < cinematic floor {min_tris:,}"
         )
-    mesh_count = len([o for o in objects if o.type == "MESH"])
-    if mesh_count < int(target.spec.get("minMeshObjects", 8)):
+    meshes = [o for o in objects if o.type == "MESH"]
+    if len(meshes) < int(target.spec.get("minMeshObjects", 8)):
         raise ForgeError(f"{target.slug}: assembly has too few sculpted mesh parts")
+    missing_uv = [o.name for o in meshes if len(o.data.uv_layers) == 0]
+    if missing_uv:
+        raise ForgeError(
+            f"{target.slug}: cinematic source meshes require authored UVs; "
+            f"missing on {missing_uv[:8]}"
+        )
+    zero_area = [
+        o.name for o in meshes
+        if min(float(abs(v)) for v in o.dimensions) <= 1e-5
+    ]
+    if zero_area:
+        raise ForgeError(
+            f"{target.slug}: degenerate mesh bounds detected: {zero_area[:8]}"
+        )
 
 
 def _apply_private_face_preview(target: BuildTarget, objects: Iterable[Any]) -> None:
@@ -478,7 +499,26 @@ def _apply_private_face_preview(target: BuildTarget, objects: Iterable[Any]) -> 
     # live outside the repository; approved publication is a separate command.
 
 
-def _setup_cinematic_scene(target: BuildTarget, samples: int) -> None:
+def _world_bounds(objects: Iterable[Any]) -> tuple[Any, Any, Any]:
+    points = []
+    for obj in objects:
+        if obj.type != "MESH":
+            continue
+        points.extend(obj.matrix_world @ Vector(corner) for corner in obj.bound_box)
+    if not points:
+        raise ForgeError("Cannot frame preview: assembly has no mesh bounds")
+    minimum = Vector((
+        min(p.x for p in points), min(p.y for p in points), min(p.z for p in points)
+    ))
+    maximum = Vector((
+        max(p.x for p in points), max(p.y for p in points), max(p.z for p in points)
+    ))
+    return minimum, maximum, (minimum + maximum) * 0.5
+
+
+def _setup_cinematic_scene(
+    target: BuildTarget, objects: Iterable[Any], samples: int
+) -> None:
     scene = bpy.context.scene
     scene.render.engine = "CYCLES"
     scene.cycles.samples = samples
@@ -490,57 +530,76 @@ def _setup_cinematic_scene(target: BuildTarget, samples: int) -> None:
         scene.cycles.device = "GPU"
     except Exception:
         scene.cycles.device = "CPU"
-    scene.render.resolution_x = 1024
-    scene.render.resolution_y = 1024
+
+    # Private review renders are deliberately large enough to inspect face,
+    # filigree, cloth weave and armor micro-detail without mistaking a thumbnail
+    # for a quality gate.
+    scene.render.resolution_x = 2048
+    scene.render.resolution_y = 2048
     scene.render.resolution_percentage = 100
     scene.render.image_settings.file_format = "PNG"
     scene.view_settings.look = "AgX - Medium High Contrast"
     scene.render.film_transparent = False
     scene.world.color = (0.004, 0.005, 0.008)
 
-    bpy.ops.mesh.primitive_plane_add(size=14, location=(0, 0, 0))
+    minimum, maximum, center = _world_bounds(objects)
+    size = maximum - minimum
+    radius = max(float(size.x), float(size.y), float(size.z), 1.0)
+    floor_z = float(minimum.z) - max(radius * 0.006, 0.004)
+    board_size = max(14.0, radius * 3.1)
+
+    bpy.ops.mesh.primitive_plane_add(
+        size=board_size, location=(float(center.x), float(center.y), floor_z)
+    )
     board = bpy.context.active_object
     board.name = "RENDER_BOARD"
     board.data.materials.append(
         _material("MAT_Board", (0.008, 0.009, 0.014, 1), 0.75, 0.18)
     )
 
+    aim = Vector((
+        float(center.x),
+        float(center.y),
+        float(minimum.z + size.z * (0.54 if target.piece == "knight" else 0.58)),
+    ))
+
     def area(
         name: str,
-        loc: tuple[float, float, float],
+        offset: tuple[float, float, float],
         energy: float,
-        size: float,
+        size_scale: float,
         color: tuple[float, float, float],
     ) -> None:
         data = bpy.data.lights.new(name, type="AREA")
         data.energy = energy
         data.shape = "DISK"
-        data.size = size
+        data.size = max(radius * size_scale, 2.0)
         data.color = color
         obj = bpy.data.objects.new(name, data)
         bpy.context.collection.objects.link(obj)
-        obj.location = loc
-        direction = Vector((0, 0, 2.0)) - obj.location
+        obj.location = aim + Vector(offset) * radius
+        direction = aim - obj.location
         obj.rotation_euler = direction.to_track_quat("-Z", "Y").to_euler()
 
-    area("Key", (4.5, -5.5, 7.5), 1500, 4.0, (1.0, 0.75, 0.48))
-    area("Fill", (-4.0, -2.0, 5.0), 700, 5.0, (0.38, 0.48, 0.72))
-    area("Rim", (0.0, 4.5, 6.0), 1300, 3.0, (0.25, 0.42, 1.0))
+    area("Key", (0.82, -1.00, 1.08), 1700, 0.72, (1.0, 0.75, 0.48))
+    area("Fill", (-0.92, -0.45, 0.72), 760, 0.90, (0.38, 0.48, 0.72))
+    area("Rim", (0.0, 0.92, 0.92), 1450, 0.58, (0.25, 0.42, 1.0))
 
     cam_data = bpy.data.cameras.new("ForgeCamera")
     cam = bpy.data.objects.new("ForgeCamera", cam_data)
     bpy.context.collection.objects.link(cam)
     scene.camera = cam
-    cam.location = (
-        (5.8, -8.8, 4.7)
-        if target.piece != "knight"
-        else (7.3, -10.8, 5.0)
-    )
-    target_pt = Vector((0, 0, 2.5 if target.piece != "knight" else 2.3))
-    cam.rotation_euler = (
-        target_pt - cam.location
-    ).to_track_quat("-Z", "Y").to_euler()
-    cam.data.lens = 68
+    cam.data.lens = 72 if target.piece != "knight" else 66
+
+    # Frame from real assembly bounds rather than magic coordinates. The old
+    # fixed camera could crop the centaur or make a tall castle staff look tiny.
+    half_fov = max(float(cam.data.angle) * 0.5, math.radians(12.0))
+    distance = (radius * 0.72) / max(math.tan(half_fov), 0.15)
+    distance *= 1.20 if target.piece == "knight" else 1.10
+    view_dir = Vector((0.62, -1.0, 0.30 if target.piece == "knight" else 0.24))
+    view_dir.normalize()
+    cam.location = aim - view_dir * distance
+    cam.rotation_euler = (aim - cam.location).to_track_quat("-Z", "Y").to_euler()
 
 
 def _render_preview(target: BuildTarget) -> None:
@@ -549,7 +608,7 @@ def _render_preview(target: BuildTarget) -> None:
     bpy.ops.render.render(write_still=True)
     if (
         not target.preview_path.exists()
-        or target.preview_path.stat().st_size < 50_000
+        or target.preview_path.stat().st_size < 100_000
     ):
         raise ForgeError(
             f"Preview render failed or suspiciously small: {target.preview_path}"
@@ -584,6 +643,54 @@ def _export_glb(target: BuildTarget, objects: Iterable[Any], armature: Any) -> N
         )
 
 
+def _sha256(path: pathlib.Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _write_qc_receipt(
+    target: BuildTarget, objects: list[Any], armature: Any
+) -> None:
+    verts, tris = _geometry_stats(objects)
+    meshes = [o for o in objects if o.type == "MESH"]
+    payload = {
+        "schemaVersion": 1,
+        "status": "PASS",
+        "piece": target.slug,
+        "privacy": "private-review" if target.private_mode else "approved-output",
+        "geometry": {
+            "vertices": verts,
+            "triangles": tris,
+            "meshObjects": len(meshes),
+            "uvMappedMeshes": sum(1 for o in meshes if len(o.data.uv_layers) > 0),
+        },
+        "rig": {
+            "armature": armature.name,
+            "boneCount": len(armature.data.bones),
+            "namespace": "mixamorig:*",
+        },
+        "outputs": {
+            "preview": {
+                "file": target.preview_path.name,
+                "bytes": target.preview_path.stat().st_size,
+                "sha256": _sha256(target.preview_path),
+            },
+            "glb": {
+                "file": target.glb_path.name,
+                "bytes": target.glb_path.stat().st_size,
+                "sha256": _sha256(target.glb_path),
+            },
+        },
+    }
+    target.qc_path.parent.mkdir(parents=True, exist_ok=True)
+    target.qc_path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8"
+    )
+
+
 def _build_one(
     target: BuildTarget, manifest: dict[str, Any], samples: int
 ) -> None:
@@ -604,15 +711,17 @@ def _build_one(
     _parent_weighted_to_armature(imported, arm, rigid)
     _apply_faction_look(target, imported, manifest)
     _apply_private_face_preview(target, imported)
-    _setup_cinematic_scene(target, samples)
+    _setup_cinematic_scene(target, imported, samples)
     _render_preview(target)
     _export_glb(target, imported, arm)
+    _write_qc_receipt(target, imported, arm)
 
     print(json.dumps({
         "status": "PASS",
         "piece": target.slug,
         "preview": str(target.preview_path),
         "glb": str(target.glb_path),
+        "qc": str(target.qc_path),
         "publication": (
             "private-review" if target.private_mode else "approved-output"
         ),
