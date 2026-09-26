@@ -94,6 +94,9 @@ class Phase1ForgeContractTests(unittest.TestCase):
         publish=PUBLISH.read_text(encoding="utf-8")
         self.assertIn("[ValidateSet('all')]", publish)
         self.assertIn("--repository-root", publish)
+        self.assertIn(".phase1-approved-staging", publish)
+        self.assertIn("Publication transaction incomplete", publish)
+        self.assertIn("$installed", publish)
 
 if __name__ == "__main__":
     unittest.main()
