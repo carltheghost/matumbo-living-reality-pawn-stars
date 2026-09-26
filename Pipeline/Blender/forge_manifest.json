@@ -4,8 +4,9 @@
   "qualityBar": "cinematic boss-fight photoreal; no placeholder/proxy/lowpoly/primitive character sources",
   "privacy": {
     "maleFacePublicByDefault": false,
-    "maleFaceInput": "local-only face.jpg via --face-image",
-    "rule": "All twelve GLBs/PNGs remain in private review output until Tumbo explicitly approves publication."
+    "maleFaceInput": "local-only face.jpg is likeness provenance; forge consumes a baked private MetaHuman head, never the photo as a texture",
+    "rule": "All twelve GLBs/PNGs remain in private review output until Tumbo explicitly approves publication.",
+    "metaHumanHead": "faces/tumbo_metahuman_head.fbx stays under the external TUMBO_CHESS_SOURCE_ROOT and must not be committed"
   },
   "materials": {
     "black": {
@@ -120,6 +121,7 @@
       "minMeshObjects": 12,
       "sources": [
         "bodies/male_hero.fbx",
+        "faces/tumbo_metahuman_head.fbx",
         "armor/king_armor.fbx",
         "props/king_royal_staff.fbx",
         "props/king_sword.fbx",
@@ -131,13 +133,16 @@
         "royal_staff",
         "sword_hip",
         "armor",
-        "filigree"
+        "filigree",
+        "metahuman_tumbo"
       ],
       "rigidMounts": {
         "crown": "mixamorig:Head",
         "royal_staff": "mixamorig:RightHand",
-        "sword_hip": "mixamorig:Hips"
-      }
+        "sword_hip": "mixamorig:Hips",
+        "metahuman_tumbo": "mixamorig:Head"
+      },
+      "rigSource": "bodies/male_hero.fbx"
     },
     "queen": {
       "sourceMode": "sculpted-hybrid",
@@ -145,6 +150,7 @@
       "minMeshObjects": 12,
       "sources": [
         "bodies/female_regal.fbx",
+        "faces/queen_regal_metahuman_head.fbx",
         "armor/queen_armor.fbx",
         "props/queen_crook_staff.fbx",
         "cloth/queen_cape.fbx",
@@ -157,12 +163,15 @@
         "crook_staff",
         "long_hair",
         "armor",
-        "filigree"
+        "filigree",
+        "metahuman_queen"
       ],
       "rigidMounts": {
         "elegant_crown": "mixamorig:Head",
-        "crook_staff": "mixamorig:RightHand"
-      }
+        "crook_staff": "mixamorig:RightHand",
+        "metahuman_queen": "mixamorig:Head"
+      },
+      "rigSource": "bodies/female_regal.fbx"
     },
     "bishop": {
       "sourceMode": "sculpted-hybrid",
@@ -170,6 +179,7 @@
       "minMeshObjects": 11,
       "sources": [
         "bodies/male_hero.fbx",
+        "faces/tumbo_metahuman_head.fbx",
         "armor/bishop_armor.fbx",
         "props/bishop_crook_staff.fbx",
         "cloth/bishop_cape.fbx"
@@ -179,12 +189,15 @@
         "crook_staff",
         "cape",
         "armor",
-        "filigree"
+        "filigree",
+        "metahuman_tumbo"
       ],
       "rigidMounts": {
         "tall_mitre": "mixamorig:Head",
-        "crook_staff": "mixamorig:RightHand"
-      }
+        "crook_staff": "mixamorig:RightHand",
+        "metahuman_tumbo": "mixamorig:Head"
+      },
+      "rigSource": "bodies/male_hero.fbx"
     },
     "knight": {
       "sourceMode": "sculpted-hybrid",
@@ -192,6 +205,7 @@
       "minMeshObjects": 18,
       "sources": [
         "bodies/centaur_hero.fbx",
+        "faces/tumbo_metahuman_head.fbx",
         "armor/knight_centaur_barding.fbx",
         "props/knight_sword.fbx",
         "props/knight_tower_shield.fbx"
@@ -206,13 +220,16 @@
         "sword",
         "tower_shield",
         "armor",
-        "filigree"
+        "filigree",
+        "metahuman_tumbo"
       ],
       "rigidMounts": {
         "horse_head_helm": "mixamorig:Head",
         "sword": "mixamorig:RightHand",
-        "tower_shield": "mixamorig:LeftHand"
-      }
+        "tower_shield": "mixamorig:LeftHand",
+        "metahuman_tumbo": "mixamorig:Head"
+      },
+      "rigSource": "bodies/centaur_hero.fbx"
     },
     "rook": {
       "sourceMode": "sculpted-hybrid",
@@ -220,6 +237,7 @@
       "minMeshObjects": 15,
       "sources": [
         "bodies/male_hero.fbx",
+        "faces/tumbo_metahuman_head.fbx",
         "armor/rook_siege_armor.fbx",
         "props/rook_tower_shield.fbx",
         "props/rook_massive_castle_staff.fbx",
@@ -234,12 +252,15 @@
         "side_turrets",
         "gate",
         "armor",
-        "filigree"
+        "filigree",
+        "metahuman_tumbo"
       ],
       "rigidMounts": {
         "tower_shield": "mixamorig:LeftHand",
-        "massive_castle_staff": "mixamorig:RightHand"
-      }
+        "massive_castle_staff": "mixamorig:RightHand",
+        "metahuman_tumbo": "mixamorig:Head"
+      },
+      "rigSource": "bodies/male_hero.fbx"
     },
     "pawn": {
       "sourceMode": "sculpted-hybrid",
@@ -247,6 +268,7 @@
       "minMeshObjects": 9,
       "sources": [
         "bodies/male_hero.fbx",
+        "faces/tumbo_metahuman_head.fbx",
         "armor/pawn_armor.fbx",
         "props/pawn_spear.fbx"
       ],
@@ -255,17 +277,21 @@
         "brim",
         "spear",
         "armor",
-        "filigree"
+        "filigree",
+        "metahuman_tumbo"
       ],
       "rigidMounts": {
         "kettle_helm": "mixamorig:Head",
-        "spear": "mixamorig:RightHand"
-      }
+        "spear": "mixamorig:RightHand",
+        "metahuman_tumbo": "mixamorig:Head"
+      },
+      "rigSource": "bodies/male_hero.fbx"
     }
   },
   "texturePolicy": {
     "source": "artist-authored or reviewed AI-assisted PBR maps",
     "minimumResolution": "4096x4096 for hero armor/filigree, 2048x2048 minimum for cloth",
-    "rule": "No auto-generated map enters the forge until a human reviews seams, heraldry, anatomy-adjacent regions and faction consistency."
+    "rule": "No auto-generated map enters the forge until a human reviews seams, heraldry, anatomy-adjacent regions and faction consistency.",
+    "faceRule": "Tumbo likeness is authored through MetaHuman and baked/exported as a private head asset with authored skin maps. Direct projection of face.jpg onto geometry is forbidden."
   }
 }
