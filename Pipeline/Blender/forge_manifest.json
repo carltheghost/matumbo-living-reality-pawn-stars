@@ -9,52 +9,258 @@
   },
   "materials": {
     "black": {
-      "armor": {"baseColor":[0.009,0.01,0.014,1.0],"metallic":0.86,"roughness":0.22,
-        "textures":{"baseColor":"textures/black/armor_basecolor.png","roughness":"textures/black/armor_roughness.png","metallic":"textures/black/armor_metallic.png","normal":"textures/black/armor_normal.png"}},
-      "gold": {"baseColor":[0.62,0.34,0.055,1.0],"metallic":1.0,"roughness":0.18,
-        "textures":{"baseColor":"textures/shared/gold_basecolor.png","roughness":"textures/shared/gold_roughness.png","metallic":"textures/shared/gold_metallic.png","normal":"textures/shared/gold_engraved_normal.png"}},
-      "cloth": {"baseColor":[0.012,0.01,0.015,1.0],"metallic":0.0,"roughness":0.72,
-        "textures":{"baseColor":"textures/black/cloth_basecolor.png","roughness":"textures/black/cloth_roughness.png","normal":"textures/black/cloth_normal.png"}}
+      "armor": {
+        "baseColor": [
+          0.009,
+          0.01,
+          0.014,
+          1
+        ],
+        "metallic": 0.86,
+        "roughness": 0.22,
+        "textures": {
+          "baseColor": "textures/black/armor_basecolor.png",
+          "roughness": "textures/black/armor_roughness.png",
+          "metallic": "textures/black/armor_metallic.png",
+          "normal": "textures/black/armor_normal.png"
+        },
+        "minResolution": 4096
+      },
+      "gold": {
+        "baseColor": [
+          0.62,
+          0.34,
+          0.055,
+          1
+        ],
+        "metallic": 1,
+        "roughness": 0.18,
+        "textures": {
+          "baseColor": "textures/shared/gold_basecolor.png",
+          "roughness": "textures/shared/gold_roughness.png",
+          "metallic": "textures/shared/gold_metallic.png",
+          "normal": "textures/shared/gold_engraved_normal.png"
+        },
+        "minResolution": 4096
+      },
+      "cloth": {
+        "baseColor": [
+          0.012,
+          0.01,
+          0.015,
+          1
+        ],
+        "metallic": 0,
+        "roughness": 0.72,
+        "textures": {
+          "baseColor": "textures/black/cloth_basecolor.png",
+          "roughness": "textures/black/cloth_roughness.png",
+          "normal": "textures/black/cloth_normal.png"
+        },
+        "minResolution": 2048
+      }
     },
     "white": {
-      "armor": {"baseColor":[0.76,0.68,0.52,1.0],"metallic":0.48,"roughness":0.28,
-        "textures":{"baseColor":"textures/white/armor_basecolor.png","roughness":"textures/white/armor_roughness.png","metallic":"textures/white/armor_metallic.png","normal":"textures/white/armor_normal.png"}},
-      "gold": {"baseColor":[0.72,0.43,0.08,1.0],"metallic":1.0,"roughness":0.18,
-        "textures":{"baseColor":"textures/shared/gold_basecolor.png","roughness":"textures/shared/gold_roughness.png","metallic":"textures/shared/gold_metallic.png","normal":"textures/shared/gold_engraved_normal.png"}},
-      "cloth": {"baseColor":[0.61,0.55,0.43,1.0],"metallic":0.0,"roughness":0.70,
-        "textures":{"baseColor":"textures/white/cloth_basecolor.png","roughness":"textures/white/cloth_roughness.png","normal":"textures/white/cloth_normal.png"}}
+      "armor": {
+        "baseColor": [
+          0.76,
+          0.68,
+          0.52,
+          1
+        ],
+        "metallic": 0.48,
+        "roughness": 0.28,
+        "textures": {
+          "baseColor": "textures/white/armor_basecolor.png",
+          "roughness": "textures/white/armor_roughness.png",
+          "metallic": "textures/white/armor_metallic.png",
+          "normal": "textures/white/armor_normal.png"
+        },
+        "minResolution": 4096
+      },
+      "gold": {
+        "baseColor": [
+          0.72,
+          0.43,
+          0.08,
+          1
+        ],
+        "metallic": 1,
+        "roughness": 0.18,
+        "textures": {
+          "baseColor": "textures/shared/gold_basecolor.png",
+          "roughness": "textures/shared/gold_roughness.png",
+          "metallic": "textures/shared/gold_metallic.png",
+          "normal": "textures/shared/gold_engraved_normal.png"
+        },
+        "minResolution": 4096
+      },
+      "cloth": {
+        "baseColor": [
+          0.61,
+          0.55,
+          0.43,
+          1
+        ],
+        "metallic": 0,
+        "roughness": 0.7,
+        "textures": {
+          "baseColor": "textures/white/cloth_basecolor.png",
+          "roughness": "textures/white/cloth_roughness.png",
+          "normal": "textures/white/cloth_normal.png"
+        },
+        "minResolution": 2048
+      }
     }
   },
   "pieces": {
     "king": {
-      "sourceMode":"sculpted-hybrid","minTriangles":120000,"minMeshObjects":12,
-      "sources":["bodies/male_hero.fbx","armor/king_armor.fbx","props/king_royal_staff.fbx","props/king_sword.fbx","cloth/king_cape.fbx"],
-      "requiredTags":["crown","cape","royal_staff","sword_hip","armor","filigree"]
+      "sourceMode": "sculpted-hybrid",
+      "minTriangles": 120000,
+      "minMeshObjects": 12,
+      "sources": [
+        "bodies/male_hero.fbx",
+        "armor/king_armor.fbx",
+        "props/king_royal_staff.fbx",
+        "props/king_sword.fbx",
+        "cloth/king_cape.fbx"
+      ],
+      "requiredTags": [
+        "crown",
+        "cape",
+        "royal_staff",
+        "sword_hip",
+        "armor",
+        "filigree"
+      ],
+      "rigidMounts": {
+        "crown": "mixamorig:Head",
+        "royal_staff": "mixamorig:RightHand",
+        "sword_hip": "mixamorig:Hips"
+      }
     },
     "queen": {
-      "sourceMode":"sculpted-hybrid","minTriangles":120000,"minMeshObjects":12,
-      "sources":["bodies/female_regal.fbx","armor/queen_armor.fbx","props/queen_crook_staff.fbx","cloth/queen_cape.fbx","hair/queen_long_hair.fbx"],
-      "requiredTags":["feminine","elegant_crown","cape","crook_staff","long_hair","armor","filigree"]
+      "sourceMode": "sculpted-hybrid",
+      "minTriangles": 120000,
+      "minMeshObjects": 12,
+      "sources": [
+        "bodies/female_regal.fbx",
+        "armor/queen_armor.fbx",
+        "props/queen_crook_staff.fbx",
+        "cloth/queen_cape.fbx",
+        "hair/queen_long_hair.fbx"
+      ],
+      "requiredTags": [
+        "feminine",
+        "elegant_crown",
+        "cape",
+        "crook_staff",
+        "long_hair",
+        "armor",
+        "filigree"
+      ],
+      "rigidMounts": {
+        "elegant_crown": "mixamorig:Head",
+        "crook_staff": "mixamorig:RightHand"
+      }
     },
     "bishop": {
-      "sourceMode":"sculpted-hybrid","minTriangles":110000,"minMeshObjects":11,
-      "sources":["bodies/male_hero.fbx","armor/bishop_armor.fbx","props/bishop_crook_staff.fbx","cloth/bishop_cape.fbx"],
-      "requiredTags":["tall_mitre","crook_staff","cape","armor","filigree"]
+      "sourceMode": "sculpted-hybrid",
+      "minTriangles": 110000,
+      "minMeshObjects": 11,
+      "sources": [
+        "bodies/male_hero.fbx",
+        "armor/bishop_armor.fbx",
+        "props/bishop_crook_staff.fbx",
+        "cloth/bishop_cape.fbx"
+      ],
+      "requiredTags": [
+        "tall_mitre",
+        "crook_staff",
+        "cape",
+        "armor",
+        "filigree"
+      ],
+      "rigidMounts": {
+        "tall_mitre": "mixamorig:Head",
+        "crook_staff": "mixamorig:RightHand"
+      }
     },
     "knight": {
-      "sourceMode":"sculpted-hybrid","minTriangles":180000,"minMeshObjects":18,
-      "sources":["bodies/centaur_hero.fbx","armor/knight_centaur_barding.fbx","props/knight_sword.fbx","props/knight_tower_shield.fbx"],
-      "requiredTags":["centaur","horse_head_helm","horse_barrel","four_legs","hooves","tail","sword","tower_shield","armor","filigree"]
+      "sourceMode": "sculpted-hybrid",
+      "minTriangles": 180000,
+      "minMeshObjects": 18,
+      "sources": [
+        "bodies/centaur_hero.fbx",
+        "armor/knight_centaur_barding.fbx",
+        "props/knight_sword.fbx",
+        "props/knight_tower_shield.fbx"
+      ],
+      "requiredTags": [
+        "centaur",
+        "horse_head_helm",
+        "horse_barrel",
+        "four_legs",
+        "hooves",
+        "tail",
+        "sword",
+        "tower_shield",
+        "armor",
+        "filigree"
+      ],
+      "rigidMounts": {
+        "horse_head_helm": "mixamorig:Head",
+        "sword": "mixamorig:RightHand",
+        "tower_shield": "mixamorig:LeftHand"
+      }
     },
     "rook": {
-      "sourceMode":"sculpted-hybrid","minTriangles":140000,"minMeshObjects":15,
-      "sources":["bodies/male_hero.fbx","armor/rook_siege_armor.fbx","props/rook_tower_shield.fbx","props/rook_massive_castle_staff.fbx","cloth/rook_cape.fbx"],
-      "requiredTags":["tower_pauldrons","tower_shield","cape","massive_castle_staff","battlements","side_turrets","gate","armor","filigree"]
+      "sourceMode": "sculpted-hybrid",
+      "minTriangles": 140000,
+      "minMeshObjects": 15,
+      "sources": [
+        "bodies/male_hero.fbx",
+        "armor/rook_siege_armor.fbx",
+        "props/rook_tower_shield.fbx",
+        "props/rook_massive_castle_staff.fbx",
+        "cloth/rook_cape.fbx"
+      ],
+      "requiredTags": [
+        "tower_pauldrons",
+        "tower_shield",
+        "cape",
+        "massive_castle_staff",
+        "battlements",
+        "side_turrets",
+        "gate",
+        "armor",
+        "filigree"
+      ],
+      "rigidMounts": {
+        "tower_shield": "mixamorig:LeftHand",
+        "massive_castle_staff": "mixamorig:RightHand"
+      }
     },
     "pawn": {
-      "sourceMode":"sculpted-hybrid","minTriangles":90000,"minMeshObjects":9,
-      "sources":["bodies/male_hero.fbx","armor/pawn_armor.fbx","props/pawn_spear.fbx"],
-      "requiredTags":["kettle_helm","brim","spear","armor","filigree"]
+      "sourceMode": "sculpted-hybrid",
+      "minTriangles": 90000,
+      "minMeshObjects": 9,
+      "sources": [
+        "bodies/male_hero.fbx",
+        "armor/pawn_armor.fbx",
+        "props/pawn_spear.fbx"
+      ],
+      "requiredTags": [
+        "kettle_helm",
+        "brim",
+        "spear",
+        "armor",
+        "filigree"
+      ],
+      "rigidMounts": {
+        "kettle_helm": "mixamorig:Head",
+        "spear": "mixamorig:RightHand"
+      }
     }
   },
   "texturePolicy": {
