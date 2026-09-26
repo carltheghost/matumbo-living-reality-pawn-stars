@@ -1,5 +1,6 @@
 $ErrorActionPreference = 'Stop'
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
+& (Join-Path $here 'preflight_phase1.ps1')
 $repo = Resolve-Path (Join-Path $here '..\..')
 $manifest = Join-Path $here 'forge_manifest.json'
 $forge = Join-Path $here 'chess_forge.py'
