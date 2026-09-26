@@ -18,11 +18,12 @@ Procedural primitives can establish scale and socket layout, but they cannot cre
 6. **Actual preview render** — The preview is rendered from the assembled 3D asset at 2048×2048 in a dark reflective board scene with warm key, cool fill and blue rim. Framing is computed from the real assembly bounds so the wide centaur and tall castle staff cannot be silently cropped. Concept art cannot masquerade as a forge result.
 7. **GLB export + QC** — The same assembled asset is exported after geometry, authored-UV, character-law, material and rig gates pass. Every piece also writes a private `qc-{faction}-{piece}.json` receipt with geometry counts plus SHA-256 hashes and byte sizes for the exact PNG/GLB pair.
 8. **Twelve-piece review gate** — `run_phase1_review.ps1` executes both armies, requires all 12 PNGs + GLBs + QC receipts, writes a private `phase1-review-manifest.json`, and builds `phase1-review.html` so Tumbo can inspect the complete set in one local board.
-9. **Approval publication** — Only after Tumbo eyeballs all 12 private previews does `publish_approved.ps1` permit outputs to be written into `chess/glb/` for a PR.
+9. **Exact-artifact approval** — After Tumbo eyeballs all twelve previews, `approve_review.ps1 -IApproveAll12` verifies every QC/hash pair and writes a private `approval.json` that names the exact reviewed GLB/PNG hashes.
+10. **Hash-locked publication** — `publish_approved.ps1` never launches Blender. It promotes only the exact files named by `approval.json`, re-checks SHA-256 before and after copy, and refuses partial or changed review sets.
 
-The forge enforces the storage boundary: approved output must be inside the repository, while the private review directory and private face input must resolve outside it. Publication is all-or-nothing for both factions, and gameplay GLBs contain only the selected assembled actor—not the preview board, camera or lights.
+The forge itself writes private review output only. The private review directory, source pack, MetaHuman likeness assets, and face reference must stay outside the repository. The publication step is separate and hash-locked so the files committed to the PR are the same files Tumbo actually inspected. Gameplay GLBs contain only the selected assembled actor, never the preview board, camera, or lights.
 
-The Queen has an explicit likeness-isolation gate: any `PRIVATE_FACE_PREVIEW`, `tumbo_face`, or `male_face` asset on a Queen hard-fails the build. Approved publication is transactional: all 12 GLBs and all 12 preview PNGs must exist in staging before any approved artifact replaces the repository copy; failed replacement rolls back prior approved files.
+The Queen has an explicit likeness-isolation gate: any `PRIVATE_FACE_PREVIEW`, `tumbo_face`, or `male_face` asset on a Queen hard-fails the build.
 
 ## Source-pack layout expected on Tumbo's PC
 
@@ -66,12 +67,15 @@ $env:TUMBO_FACE_IMAGE='D:\maTumbo\private\face.jpg'
 
 These commands generate **private review** outputs only. The combined runner leaves `phase1-review.html` and `phase1-review-manifest.json` beside the private outputs; neither belongs in Git.
 
-After Tumbo explicitly approves every preview:
+After Tumbo explicitly approves every preview in the local review board:
 
 ```powershell
+.\Pipeline\Blender\approve_review.ps1 -IApproveAll12
 $env:TUMBO_FACE_PUBLICATION_APPROVED='YES'
 .\Pipeline\Blender\publish_approved.ps1 -Faction all
 ```
+
+`approval.json` stays in the private review directory. The publish command does not regenerate anything; it copies only the previously reviewed hash-locked outputs into `chess/glb/` for the PR.
 
 ## Acceptance gate
 
@@ -86,5 +90,6 @@ All twelve must pass before demo integration:
 - one donor Mixamo rig absorbs compatible modular weighted assets;
 - obsidian/ivory + gold filigree material law passes;
 - `mixamorig:*` rig passes; centaur equine extension passes;
-- Tumbo approves each private preview;
+- Tumbo approves each private preview and records the exact 12-piece review set with `approve_review.ps1 -IApproveAll12`;
+- publication re-verifies the approved SHA-256 hashes and never re-runs Blender;
 - only then are `chess/glb/{black|white}-{piece}.glb` and `preview-{faction}-{piece}.png` allowed into the PR/demo path.
