@@ -19,6 +19,6 @@ if (-not $env:TUMBO_FACE_IMAGE -or -not (Test-Path $env:TUMBO_FACE_IMAGE)) { thr
 
 $out = Join-Path $repo 'chess\glb'
 $private = if ($env:TUMBO_CHESS_PRIVATE_REVIEW_ROOT) { $env:TUMBO_CHESS_PRIVATE_REVIEW_ROOT } else { Join-Path $env:LOCALAPPDATA 'maTumbo\chess-review' }
-& $env:BLENDER_EXE --background --python $forge -- --manifest $manifest --faction white --piece all --source-root $env:TUMBO_CHESS_SOURCE_ROOT --output-root $out --private-review-root $private --face-image $env:TUMBO_FACE_IMAGE
+& $env:BLENDER_EXE --background --python $forge -- --manifest $manifest --faction white --piece all --source-root $env:TUMBO_CHESS_SOURCE_ROOT --output-root $out --private-review-root $private --repository-root $repo --face-image $env:TUMBO_FACE_IMAGE
 if ($LASTEXITCODE -ne 0) { throw "White army forge failed: $LASTEXITCODE" }
 Write-Host "White army private review complete: $private"

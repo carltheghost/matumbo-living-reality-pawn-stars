@@ -19,6 +19,8 @@ Procedural primitives can establish scale and socket layout, but they cannot cre
 7. **GLB export + QC** — The same assembled asset is exported after geometry, character-law, material and rig gates pass.
 8. **Approval publication** — Only after Tumbo eyeballs all 12 private previews does `publish_approved.ps1` permit outputs to be written into `chess/glb/` for a PR.
 
+The forge enforces the storage boundary: approved output must be inside the repository, while the private review directory and private face input must resolve outside it. Publication is all-or-nothing for both factions, and gameplay GLBs contain only the selected assembled actor—not the preview board, camera or lights.
+
 ## Source-pack layout expected on Tumbo's PC
 
 ```

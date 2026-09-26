@@ -23,6 +23,18 @@ RIGID = {
 }
 
 
+def _safe_relative(path: object) -> bool:
+    text = str(path).replace("\\", "/")
+    posix = pathlib.PurePosixPath(text)
+    windows = pathlib.PureWindowsPath(str(path))
+    return (
+        bool(text)
+        and not posix.is_absolute()
+        and not windows.is_absolute()
+        and ".." not in posix.parts
+    )
+
+
 def validate(path: pathlib.Path) -> list[str]:
     m=json.loads(path.read_text(encoding="utf-8")); errors=[]
     if m.get("schemaVersion") != 1: errors.append("schemaVersion must be 1")
@@ -33,7 +45,10 @@ def validate(path: pathlib.Path) -> list[str]:
         miss=LAW[p]-tags
         if miss: errors.append(f"{p}: missing law tags {sorted(miss)}")
         if s.get("sourceMode") != "sculpted-hybrid": errors.append(f"{p}: sourceMode must be sculpted-hybrid")
-        if not s.get("sources"): errors.append(f"{p}: no sculpted source files")
+        sources=s.get("sources",[])
+        if not sources: errors.append(f"{p}: no sculpted source files")
+        for source in sources:
+            if not _safe_relative(source): errors.append(f"{p}: unsafe source path {source!r}")
         if int(s.get("minTriangles",0)) < 80000: errors.append(f"{p}: cinematic triangle floor < 80k")
         rigid=set(s.get("rigidMounts",{}))
         missing_rigid=RIGID[p]-rigid
@@ -46,6 +61,9 @@ def validate(path: pathlib.Path) -> list[str]:
             if int(ms.get("minResolution",0)) < floor:
                 errors.append(f"{faction}/{material_name}: texture floor below {floor}px")
             tex=ms.get("textures",{})
+            for slot, source in tex.items():
+                if not _safe_relative(source):
+                    errors.append(f"{faction}/{material_name}/{slot}: unsafe texture path {source!r}")
             if material_name in {"armor","gold"} and not {"baseColor","roughness","metallic","normal"}.issubset(tex):
                 errors.append(f"{faction}/{material_name}: incomplete PBR texture set")
     if m.get("privacy",{}).get("maleFacePublicByDefault", True): errors.append("maleFacePublicByDefault must be false")

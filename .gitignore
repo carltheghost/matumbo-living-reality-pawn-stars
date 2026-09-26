@@ -5,3 +5,5 @@ face.jpg
 chess/review-private/
 Pipeline/Blender/source-private/
 *.blend1
+__pycache__/
+*.py[cod]

@@ -10,7 +10,8 @@ Run inside Blender:
     blender --background --python Pipeline/Blender/chess_forge.py -- \
       --manifest Pipeline/Blender/forge_manifest.json --faction black \
       --piece king --source-root D:/maTumboChessSource --output-root chess/glb \
-      --private-review-root D:/maTumboChessReview --face-image D:/private/face.jpg
+      --private-review-root D:/maTumboChessReview --repository-root . \
+      --face-image D:/private/face.jpg
 
 Public/publish output is intentionally harder than private review output. Male
 pieces can use Tumbo's local face source for PRIVATE REVIEW, but publishing them
@@ -92,6 +93,8 @@ def _args(argv: list[str]) -> argparse.Namespace:
     p.add_argument("--source-root", required=True)
     p.add_argument("--output-root", required=True)
     p.add_argument("--private-review-root", required=True)
+    p.add_argument("--repository-root", required=True,
+                   help="Repository root used to enforce the private-output boundary")
     p.add_argument("--face-image")
     p.add_argument("--publish-approved", action="store_true",
                    help="Explicit Tumbo approval gate for face-bearing public artifacts")
@@ -122,13 +125,36 @@ def _reset_scene() -> None:
         for block in list(datablocks):
             if block.users == 0:
                 datablocks.remove(block)
+    # Material datablocks survive object deletion unless explicitly removed.
+    # Leaving them around makes later pieces import suffixed materials and can
+    # bind the private face image to a stale, unused material from piece one.
+    for material in list(bpy.data.materials):
+        if material.users == 0:
+            bpy.data.materials.remove(material)
 
 
 def _resolve_source(root: pathlib.Path, rel: str) -> pathlib.Path:
+    root = root.resolve()
     p = (root / rel).resolve()
+    if not p.is_relative_to(root):
+        raise ForgeError(f"Source path escapes the approved source root: {rel}")
     if not p.exists():
         raise ForgeError(f"Required sculpt/source asset is missing: {p}")
     return p
+
+
+def _validate_storage_boundaries(
+    repository_root: pathlib.Path,
+    output_root: pathlib.Path,
+    private_root: pathlib.Path,
+    face_image: pathlib.Path | None,
+) -> None:
+    if not output_root.is_relative_to(repository_root):
+        raise ForgeError("Approved output root must stay inside the repository")
+    if private_root.is_relative_to(repository_root):
+        raise ForgeError("Private review root must stay outside the repository")
+    if face_image is not None and face_image.is_relative_to(repository_root):
+        raise ForgeError("Private face input must stay outside the repository")
 
 
 def _import_asset(path: pathlib.Path) -> list[Any]:
@@ -289,9 +315,13 @@ def _attach_rigid_parts(
                 f"{target.slug}: rigid mount bone {bone!r} missing"
             )
         for obj in matches:
+            world = obj.matrix_world.copy()
             obj.parent = armature
             obj.parent_type = "BONE"
             obj.parent_bone = bone
+            # Bone parenting must not move an artist-authored prop away from
+            # its reviewed assembly position.
+            obj.matrix_world = world
             attached.add(obj.name)
     return attached
 
@@ -299,22 +329,38 @@ def _attach_rigid_parts(
 def _parent_weighted_to_armature(
     objects: Iterable[Any], armature: Any, rigid_names: set[str]
 ) -> None:
+    deform_bones = {
+        b.name for b in armature.data.bones if getattr(b, "use_deform", True)
+    }
     for obj in objects:
-        if (
-            obj.type != "MESH"
-            or obj.name in rigid_names
-            or obj.parent == armature
-        ):
+        if obj.type != "MESH" or obj.name in rigid_names:
             continue
         # Body, armor, hair and cloth arrive artist-weighted. The forge does
         # not use automatic envelopes because that would destroy authored
         # deformation quality around shoulders, capes and centaur joins.
-        groups = {g.name for g in obj.vertex_groups}
-        if not groups:
+        valid_group_indices = {
+            g.index for g in obj.vertex_groups if g.name in deform_bones
+        }
+        if not valid_group_indices:
             raise ForgeError(
-                f"{obj.name}: cinematic deforming mesh is unweighted"
+                f"{obj.name}: no weights target a deform bone on the export rig"
             )
-        obj.parent = armature
+        unweighted = [
+            v.index for v in obj.data.vertices
+            if not any(
+                assignment.group in valid_group_indices and assignment.weight > 0
+                for assignment in v.groups
+            )
+        ]
+        if unweighted:
+            raise ForgeError(
+                f"{obj.name}: {len(unweighted)} vertices lack export-rig weights; "
+                f"first={unweighted[:8]}"
+            )
+        if obj.parent != armature:
+            world = obj.matrix_world.copy()
+            obj.parent = armature
+            obj.matrix_world = world
         mod = next(
             (m for m in obj.modifiers if m.type == "ARMATURE"), None
         )
@@ -363,29 +409,45 @@ def _validate_geometry(target: BuildTarget, objects: list[Any]) -> None:
         raise ForgeError(f"{target.slug}: assembly has too few sculpted mesh parts")
 
 
-def _apply_private_face_preview(target: BuildTarget) -> None:
+def _apply_private_face_preview(target: BuildTarget, objects: Iterable[Any]) -> None:
     if not target.is_male:
         return
     if target.face_image is None or not target.face_image.exists():
         raise ForgeError(
             f"{target.slug}: local face.jpg is required for private male-piece review"
         )
-    face_mats = [
-        m for m in bpy.data.materials if m.name == "PRIVATE_FACE_PREVIEW"
-    ]
+    face_mats = []
+    for obj in objects:
+        if obj.type != "MESH":
+            continue
+        for slot in obj.material_slots:
+            mat = slot.material
+            if (
+                mat is not None
+                and (
+                    mat.name == "PRIVATE_FACE_PREVIEW"
+                    or mat.name.startswith("PRIVATE_FACE_PREVIEW.")
+                )
+                and mat not in face_mats
+            ):
+                face_mats.append(mat)
     if not face_mats:
         raise ForgeError(
             f"{target.slug}: source face must expose PRIVATE_FACE_PREVIEW material"
         )
     img = _load_image(target.face_image, non_color=False)
-    mat = face_mats[0]
-    mat.use_nodes = True
-    nt = mat.node_tree
-    bsdf = nt.nodes.get("Principled BSDF")
-    tex = nt.nodes.get("PRIVATE_FACE_IMAGE") or nt.nodes.new("ShaderNodeTexImage")
-    tex.name = "PRIVATE_FACE_IMAGE"
-    tex.image = img
-    nt.links.new(tex.outputs["Color"], bsdf.inputs["Base Color"])
+    for mat in face_mats:
+        mat.use_nodes = True
+        nt = mat.node_tree
+        bsdf = nt.nodes.get("Principled BSDF")
+        if bsdf is None:
+            raise ForgeError(
+                f"{target.slug}: PRIVATE_FACE_PREVIEW lacks Principled BSDF"
+            )
+        tex = nt.nodes.get("PRIVATE_FACE_IMAGE") or nt.nodes.new("ShaderNodeTexImage")
+        tex.name = "PRIVATE_FACE_IMAGE"
+        tex.image = img
+        nt.links.new(tex.outputs["Color"], bsdf.inputs["Base Color"])
     # Source face.jpg is never copied by this script. Private review outputs
     # live outside the repository; approved publication is a separate command.
 
@@ -468,17 +530,27 @@ def _render_preview(target: BuildTarget) -> None:
         )
 
 
-def _export_glb(target: BuildTarget) -> None:
+def _export_glb(target: BuildTarget, objects: Iterable[Any], armature: Any) -> None:
     target.glb_path.parent.mkdir(parents=True, exist_ok=True)
+    bpy.ops.object.select_all(action="DESELECT")
+    export_objects = list(dict.fromkeys([*objects, armature]))
+    for obj in export_objects:
+        if obj.name in bpy.context.view_layer.objects:
+            obj.select_set(True)
+    bpy.context.view_layer.objects.active = armature
     bpy.ops.export_scene.gltf(
         filepath=str(target.glb_path),
         export_format="GLB",
-        use_selection=False,
+        # Export the assembled actor only. RENDER_BOARD, camera and lights are
+        # preview staging and must never enter a gameplay GLB.
+        use_selection=True,
         export_skins=True,
         export_animations=True,
         export_materials="EXPORT",
         export_apply=False,
         export_image_format="AUTO",
+        export_cameras=False,
+        export_lights=False,
     )
     if not target.glb_path.exists() or target.glb_path.stat().st_size < 1_000_000:
         raise ForgeError(
@@ -504,10 +576,10 @@ def _build_one(
     rigid = _attach_rigid_parts(target, imported, arm)
     _parent_weighted_to_armature(imported, arm, rigid)
     _apply_faction_look(target, imported, manifest)
-    _apply_private_face_preview(target)
+    _apply_private_face_preview(target, imported)
     _setup_cinematic_scene(target, samples)
     _render_preview(target)
-    _export_glb(target)
+    _export_glb(target, imported, arm)
 
     print(json.dumps({
         "status": "PASS",
@@ -532,10 +604,14 @@ def main() -> int:
     source_root = pathlib.Path(ns.source_root).resolve()
     output_root = pathlib.Path(ns.output_root).resolve()
     private_root = pathlib.Path(ns.private_review_root).resolve()
+    repository_root = pathlib.Path(ns.repository_root).resolve()
     face_image = (
         pathlib.Path(ns.face_image).resolve()
         if ns.face_image
         else None
+    )
+    _validate_storage_boundaries(
+        repository_root, output_root, private_root, face_image
     )
 
     factions = FACTIONS if ns.faction == "all" else (ns.faction,)
