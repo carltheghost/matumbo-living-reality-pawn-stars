@@ -66,8 +66,8 @@ MIN_MESH_OBJECTS = {
 }
 
 FACTION_SURFACES = {
-    "black": {"armor": "obsidian", "gold": "gold_filigree"},
-    "white": {"armor": "ivory", "gold": "gold_filigree"},
+    "black": {"armor": "obsidian", "gold": "gold"},
+    "white": {"armor": "ivory", "gold": "gold"},
 }
 
 REQUIRED_TEXTURE_SLOTS = {
@@ -182,10 +182,10 @@ def validate_data(m: dict[str, Any]) -> list[str]:
                     )
 
         for material_name, identity in identities.items():
-            actual = str(fs.get(material_name, {}).get("identity", "")).lower()
+            actual = str(fs.get(material_name, {}).get("surfaceClass", "")).lower()
             if actual != identity:
                 errors.append(
-                    f"{faction}/{material_name}: identity must be {identity!r}"
+                    f"{faction}/{material_name}: surfaceClass must be {identity!r}"
                 )
 
     privacy = m.get("privacy", {})
