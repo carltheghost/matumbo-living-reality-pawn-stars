@@ -21,6 +21,8 @@ Procedural primitives can establish scale and socket layout, but they cannot cre
 
 The forge enforces the storage boundary: approved output must be inside the repository, while the private review directory and private face input must resolve outside it. Publication is all-or-nothing for both factions, and gameplay GLBs contain only the selected assembled actor—not the preview board, camera or lights.
 
+The Queen has an explicit likeness-isolation gate: any `PRIVATE_FACE_PREVIEW`, `tumbo_face`, or `male_face` asset on a Queen hard-fails the build. Approved publication is transactional: all 12 GLBs and all 12 preview PNGs must exist in staging before any approved artifact replaces the repository copy; failed replacement rolls back prior approved files.
+
 ## Source-pack layout expected on Tumbo's PC
 
 ```
