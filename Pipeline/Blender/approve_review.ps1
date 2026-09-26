@@ -21,6 +21,18 @@ if($review.StartsWith($repoPrefix,[System.StringComparison]::OrdinalIgnoreCase))
   throw 'Private review root must stay outside the repository.'
 }
 
+$reviewManifestPath=Join-Path $review 'phase1-review-manifest.json'
+if(-not (Test-Path $reviewManifestPath)){
+  throw 'Missing phase1-review-manifest.json. Run run_phase1_review.ps1 before approval.'
+}
+$reviewManifest=Get-Content -Raw $reviewManifestPath | ConvertFrom-Json
+if($reviewManifest.count -ne 12 -or $reviewManifest.gate -ne 'TUMBO_VISUAL_APPROVAL_REQUIRED'){
+  throw 'Review manifest is incomplete or not a Tumbo visual-approval set.'
+}
+$reviewManifestHash=(Get-FileHash -Algorithm SHA256 $reviewManifestPath).Hash.ToLowerInvariant()
+$reviewRecords=@{}
+foreach($entry in $reviewManifest.outputs){ $reviewRecords[[string]$entry.piece]=$entry }
+
 $pieces=@('king','queen','bishop','knight','rook','pawn')
 $factions=@('black','white')
 $artifacts=[ordered]@{}
@@ -50,6 +62,15 @@ foreach($side in $factions){
       throw "GLB changed after forge/QC for $slug"
     }
 
+    $reviewEntry=$reviewRecords[$slug]
+    if($null -eq $reviewEntry){ throw "Review board manifest missing $slug" }
+    if($previewHash -ne ([string]$reviewEntry.previewSha256).ToLowerInvariant()){
+      throw "Preview no longer matches the reviewed board: $slug"
+    }
+    if($glbHash -ne ([string]$reviewEntry.glbSha256).ToLowerInvariant()){
+      throw "GLB no longer matches the reviewed board: $slug"
+    }
+
     $artifacts[$slug]=[ordered]@{
       preview=[ordered]@{ file=[IO.Path]::GetFileName($previewPath); sha256=$previewHash }
       glb=[ordered]@{ file=[IO.Path]::GetFileName($glbPath); sha256=$glbHash }
@@ -68,7 +89,9 @@ $approval=[ordered]@{
   approvedBy='Tumbo'
   approvedAt=(Get-Date).ToUniversalTime().ToString('o')
   reviewRoot=$review
-  rule='Approval covers only these exact hashed private-review GLBs and preview PNGs.'
+  sourceReviewManifest=[IO.Path]::GetFileName($reviewManifestPath)
+  sourceReviewManifestSha256=$reviewManifestHash
+  rule='Approval covers only these exact hashed private-review GLBs and preview PNGs from the reviewed board.'
   artifacts=$artifacts
 }
 $approvalPath=Join-Path $review 'approval.json'
