@@ -17,7 +17,7 @@
           0.014,
           1
         ],
-        "metallic": 0.86,
+        "metallic": 0,
         "roughness": 0.22,
         "textures": {
           "baseColor": "textures/black/armor_basecolor.png",
@@ -25,7 +25,11 @@
           "metallic": "textures/black/armor_metallic.png",
           "normal": "textures/black/armor_normal.png"
         },
-        "minResolution": 4096
+        "minResolution": 4096,
+        "surfaceClass": "obsidian",
+        "ior": 1.5,
+        "coatWeight": 0.38,
+        "coatRoughness": 0.1
       },
       "gold": {
         "baseColor": [
@@ -42,7 +46,8 @@
           "metallic": "textures/shared/gold_metallic.png",
           "normal": "textures/shared/gold_engraved_normal.png"
         },
-        "minResolution": 4096
+        "minResolution": 4096,
+        "surfaceClass": "gold"
       },
       "cloth": {
         "baseColor": [
@@ -69,7 +74,7 @@
           0.52,
           1
         ],
-        "metallic": 0.48,
+        "metallic": 0,
         "roughness": 0.28,
         "textures": {
           "baseColor": "textures/white/armor_basecolor.png",
@@ -77,7 +82,12 @@
           "metallic": "textures/white/armor_metallic.png",
           "normal": "textures/white/armor_normal.png"
         },
-        "minResolution": 4096
+        "minResolution": 4096,
+        "surfaceClass": "ivory",
+        "ior": 1.54,
+        "coatWeight": 0.1,
+        "coatRoughness": 0.22,
+        "subsurfaceWeight": 0.03
       },
       "gold": {
         "baseColor": [
@@ -94,7 +104,8 @@
           "metallic": "textures/shared/gold_metallic.png",
           "normal": "textures/shared/gold_engraved_normal.png"
         },
-        "minResolution": 4096
+        "minResolution": 4096,
+        "surfaceClass": "gold"
       },
       "cloth": {
         "baseColor": [
