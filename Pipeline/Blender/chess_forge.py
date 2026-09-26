@@ -199,6 +199,7 @@ def _build_pbr_material(name: str, spec: dict[str, Any], root: pathlib.Path) -> 
         float(spec["metallic"]),
         float(spec["roughness"]),
     )
+    min_res = int(spec.get("minResolution", 0))
     nt = mat.node_tree
     bsdf = nt.nodes.get("Principled BSDF")
     tex = spec.get("textures", {})
@@ -214,6 +215,10 @@ def _build_pbr_material(name: str, spec: dict[str, Any], root: pathlib.Path) -> 
         node = nt.nodes.new("ShaderNodeTexImage")
         node.name = f"TEX_{slot.upper()}"
         node.image = _load_image(p, non_color=non_color)
+        if min_res and min(node.image.size[0], node.image.size[1]) < min_res:
+            raise ForgeError(
+                f"{p}: texture resolution {tuple(node.image.size)} below {min_res}px floor"
+            )
         nt.links.new(node.outputs["Color"], bsdf.inputs[input_name])
     normal_rel = tex.get("normal")
     if normal_rel:
@@ -221,6 +226,10 @@ def _build_pbr_material(name: str, spec: dict[str, Any], root: pathlib.Path) -> 
         image = nt.nodes.new("ShaderNodeTexImage")
         image.name = "TEX_NORMAL"
         image.image = _load_image(p, non_color=True)
+        if min_res and min(image.image.size[0], image.image.size[1]) < min_res:
+            raise ForgeError(
+                f"{p}: texture resolution {tuple(image.image.size)} below {min_res}px floor"
+            )
         normal = nt.nodes.new("ShaderNodeNormalMap")
         nt.links.new(image.outputs["Color"], normal.inputs["Color"])
         nt.links.new(normal.outputs["Normal"], bsdf.inputs["Normal"])
@@ -261,15 +270,54 @@ def _apply_faction_look(target: BuildTarget, objects: list[Any], manifest: dict[
         )
 
 
-def _parent_to_armature(objects: Iterable[Any], armature: Any) -> None:
+def _attach_rigid_parts(
+    target: BuildTarget, objects: Iterable[Any], armature: Any
+) -> set[str]:
+    attached: set[str] = set()
+    bone_names = {b.name for b in armature.data.bones}
+    for tag, bone in target.spec.get("rigidMounts", {}).items():
+        matches = [
+            o for o in objects
+            if o.type == "MESH" and tag.lower() in o.name.lower()
+        ]
+        if not matches:
+            raise ForgeError(
+                f"{target.slug}: rigid mount tag {tag!r} has no mesh"
+            )
+        if bone not in bone_names:
+            raise ForgeError(
+                f"{target.slug}: rigid mount bone {bone!r} missing"
+            )
+        for obj in matches:
+            obj.parent = armature
+            obj.parent_type = "BONE"
+            obj.parent_bone = bone
+            attached.add(obj.name)
+    return attached
+
+
+def _parent_weighted_to_armature(
+    objects: Iterable[Any], armature: Any, rigid_names: set[str]
+) -> None:
     for obj in objects:
-        if obj.type != "MESH" or obj.parent == armature:
+        if (
+            obj.type != "MESH"
+            or obj.name in rigid_names
+            or obj.parent == armature
+        ):
             continue
+        # Body, armor, hair and cloth arrive artist-weighted. The forge does
+        # not use automatic envelopes because that would destroy authored
+        # deformation quality around shoulders, capes and centaur joins.
         groups = {g.name for g in obj.vertex_groups}
         if not groups:
-            raise ForgeError(f"{obj.name}: modular cinematic mesh is unweighted")
+            raise ForgeError(
+                f"{obj.name}: cinematic deforming mesh is unweighted"
+            )
         obj.parent = armature
-        mod = next((m for m in obj.modifiers if m.type == "ARMATURE"), None)
+        mod = next(
+            (m for m in obj.modifiers if m.type == "ARMATURE"), None
+        )
         if mod is None:
             mod = obj.modifiers.new(name="Armature", type="ARMATURE")
         mod.object = armature
@@ -344,7 +392,16 @@ def _apply_private_face_preview(target: BuildTarget) -> None:
 
 def _setup_cinematic_scene(target: BuildTarget, samples: int) -> None:
     scene = bpy.context.scene
-    scene.render.engine = "BLENDER_EEVEE_NEXT"
+    scene.render.engine = "CYCLES"
+    scene.cycles.samples = samples
+    scene.cycles.use_denoising = True
+    try:
+        prefs = bpy.context.preferences.addons["cycles"].preferences
+        prefs.get_devices()
+        prefs.compute_device_type = "OPTIX"
+        scene.cycles.device = "GPU"
+    except Exception:
+        scene.cycles.device = "CPU"
     scene.render.resolution_x = 1024
     scene.render.resolution_y = 1024
     scene.render.resolution_percentage = 100
@@ -444,7 +501,8 @@ def _build_one(
     _validate_geometry(target, imported)
     arm = _find_armature(imported)
     _validate_mixamo(arm, target.piece)
-    _parent_to_armature(imported, arm)
+    rigid = _attach_rigid_parts(target, imported, arm)
+    _parent_weighted_to_armature(imported, arm, rigid)
     _apply_faction_look(target, imported, manifest)
     _apply_private_face_preview(target)
     _setup_cinematic_scene(target, samples)
