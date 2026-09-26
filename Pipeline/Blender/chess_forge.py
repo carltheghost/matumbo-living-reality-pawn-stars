@@ -13,10 +13,11 @@ Run inside Blender:
       --private-review-root D:/maTumboChessReview --repository-root . \
       --face-image D:/private/face.jpg
 
-Public/publish output is intentionally harder than private review output. Male
-pieces can use Tumbo's local face source for PRIVATE REVIEW, but publishing them
-requires the explicit --publish-approved flag. The face source itself is never
-copied into the repository by this script.
+The forge writes PRIVATE REVIEW outputs only. Tumbo's raw face reference is
+never copied into the repository and may not be used as a flat diffuse texture.
+Male pieces must contain a locally prepared MetaHuman likeness. After Tumbo
+reviews all twelve outputs, a separate hash-locked promotion step copies those
+exact reviewed GLBs/PNGs into the repository.
 """
 from __future__ import annotations
 
@@ -68,7 +69,6 @@ class BuildTarget:
     output_root: pathlib.Path
     private_review_root: pathlib.Path
     face_image: pathlib.Path | None
-    publish_approved: bool
 
     @property
     def slug(self) -> str:
@@ -80,23 +80,21 @@ class BuildTarget:
 
     @property
     def private_mode(self) -> bool:
-        # Every Phase 1 piece stays local until Tumbo eyeballs all twelve.
-        return not self.publish_approved
+        # Public writes are forbidden here. Publication is a separate,
+        # hash-locked promotion of the exact artifacts Tumbo reviewed.
+        return True
 
     @property
     def preview_path(self) -> pathlib.Path:
-        root = self.private_review_root if self.private_mode else self.output_root
-        return root / f"preview-{self.slug}.png"
+        return self.private_review_root / f"preview-{self.slug}.png"
 
     @property
     def glb_path(self) -> pathlib.Path:
-        root = self.private_review_root if self.private_mode else self.output_root
-        return root / f"{self.slug}.glb"
+        return self.private_review_root / f"{self.slug}.glb"
 
     @property
     def qc_path(self) -> pathlib.Path:
-        root = self.private_review_root if self.private_mode else self.output_root
-        return root / f"qc-{self.slug}.json"
+        return self.private_review_root / f"qc-{self.slug}.json"
 
 
 def _args(argv: list[str]) -> argparse.Namespace:
@@ -110,8 +108,6 @@ def _args(argv: list[str]) -> argparse.Namespace:
     p.add_argument("--repository-root", required=True,
                    help="Repository root used to enforce the private-output boundary")
     p.add_argument("--face-image")
-    p.add_argument("--publish-approved", action="store_true",
-                   help="Explicit Tumbo approval gate for face-bearing public artifacts")
     p.add_argument("--cycles-samples", type=int, default=256)
     return p.parse_args(argv)
 
@@ -820,7 +816,6 @@ def main() -> int:
                 output_root=output_root,
                 private_review_root=private_root,
                 face_image=face_image,
-                publish_approved=bool(ns.publish_approved),
             )
             try:
                 _build_one(target, manifest, ns.cycles_samples)
