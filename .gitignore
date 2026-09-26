@@ -1,6 +1,9 @@
 # Phase 1 private likeness / local sculpt sources. Never publish these.
 face.jpg
 **/face.jpg
+**/[Ff][Aa][Cc][Ee].[Jj][Pp][Gg]
+**/tumbo_metahuman_head.fbx
+**/tumbo_face*
 .private/
 chess/review-private/
 Pipeline/Blender/source-private/
