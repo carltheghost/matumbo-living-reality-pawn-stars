@@ -440,7 +440,16 @@ def _parent_weighted_to_armature(
 
 
 def _validate_piece_law(target: BuildTarget, objects: Iterable[Any]) -> None:
-    names = " ".join(o.name.lower() for o in objects)
+    searchable: list[str] = []
+    for obj in objects:
+        searchable.append(obj.name.lower())
+        if obj.type == "MESH":
+            searchable.extend(
+                slot.material.name.lower()
+                for slot in obj.material_slots
+                if slot.material is not None
+            )
+    names = " ".join(searchable)
     required = [s.lower() for s in target.spec.get("requiredTags", [])]
     missing = [tag for tag in required if tag not in names]
     if missing:
@@ -463,7 +472,11 @@ def _validate_queen_face_policy(target: BuildTarget, objects: Iterable[Any]) -> 
     violations: list[str] = []
     for obj in objects:
         lower_name = obj.name.lower()
-        if "tumbo_face" in lower_name or "male_face" in lower_name:
+        if (
+            "tumbo_face" in lower_name
+            or "male_face" in lower_name
+            or "metahuman_tumbo" in lower_name
+        ):
             violations.append(obj.name)
         if obj.type != "MESH":
             continue
