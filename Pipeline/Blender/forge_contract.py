@@ -14,12 +14,20 @@ LAW = {
     "pawn": {"kettle_helm","brim","spear"},
 }
 RIGID = {
-    "king": {"crown","royal_staff","sword_hip"},
-    "queen": {"elegant_crown","crook_staff"},
-    "bishop": {"tall_mitre","crook_staff"},
-    "knight": {"horse_head_helm","sword","tower_shield"},
-    "rook": {"tower_shield","massive_castle_staff"},
-    "pawn": {"kettle_helm","spear"},
+    "king": {"crown","royal_staff","sword_hip","metahuman_tumbo"},
+    "queen": {"elegant_crown","crook_staff","metahuman_queen"},
+    "bishop": {"tall_mitre","crook_staff","metahuman_tumbo"},
+    "knight": {"horse_head_helm","sword","tower_shield","metahuman_tumbo"},
+    "rook": {"tower_shield","massive_castle_staff","metahuman_tumbo"},
+    "pawn": {"kettle_helm","spear","metahuman_tumbo"},
+}
+IDENTITY = {
+    "king": "metahuman_tumbo",
+    "queen": "metahuman_queen",
+    "bishop": "metahuman_tumbo",
+    "knight": "metahuman_tumbo",
+    "rook": "metahuman_tumbo",
+    "pawn": "metahuman_tumbo",
 }
 
 
@@ -47,6 +55,13 @@ def validate(path: pathlib.Path) -> list[str]:
         if s.get("sourceMode") != "sculpted-hybrid": errors.append(f"{p}: sourceMode must be sculpted-hybrid")
         sources=s.get("sources",[])
         if not sources: errors.append(f"{p}: no sculpted source files")
+        rig_source=s.get("rigSource")
+        if not rig_source or rig_source not in sources:
+            errors.append(f"{p}: rigSource must name one sculpt source")
+        elif not _safe_relative(rig_source):
+            errors.append(f"{p}: unsafe rigSource {rig_source!r}")
+        if IDENTITY[p] not in tags:
+            errors.append(f"{p}: missing private MetaHuman identity tag {IDENTITY[p]!r}")
         for source in sources:
             if not _safe_relative(source): errors.append(f"{p}: unsafe source path {source!r}")
         if int(s.get("minTriangles",0)) < 80000: errors.append(f"{p}: cinematic triangle floor < 80k")
