@@ -50,6 +50,43 @@ class Phase1ForgeContractTests(unittest.TestCase):
         self.assertIn("forge_contract.py", source)
         self.assertIn("contract.validate_data(data)", source)
 
+    def test_runtime_rejects_weakened_manifest_contract(self):
+        original=json.loads(MANIFEST.read_text(encoding="utf-8"))
+        mutations=[]
+
+        m=json.loads(json.dumps(original))
+        m["pieces"]["knight"]["requiredTags"].remove("armored_legs")
+        mutations.append(m)
+
+        m=json.loads(json.dumps(original))
+        m["pieces"]["knight"]["minTriangles"]=80000
+        mutations.append(m)
+
+        m=json.loads(json.dumps(original))
+        m["materials"]["black"]["armor"]["minResolution"]=2048
+        mutations.append(m)
+
+        m=json.loads(json.dumps(original))
+        m["materials"]["white"]["armor"]["surfaceClass"]="painted_metal"
+        mutations.append(m)
+
+        m=json.loads(json.dumps(original))
+        del m["pieces"]["pawn"]
+        mutations.append(m)
+
+        for weakened in mutations:
+            with self.subTest(weakened=weakened):
+                with tempfile.TemporaryDirectory() as tmp:
+                    manifest=pathlib.Path(tmp) / "manifest.json"
+                    manifest.write_text(json.dumps(weakened), encoding="utf-8")
+                    with self.assertRaises(chess_forge.ForgeError):
+                        chess_forge._load_manifest(manifest)
+
+    def test_six_roles_times_two_factions_define_twelve_targets(self):
+        self.assertEqual(tuple(chess_forge.PIECE_ORDER), tuple(forge_contract.PIECES))
+        self.assertEqual(tuple(chess_forge.FACTIONS), ("black","white"))
+        self.assertEqual(len(chess_forge.PIECE_ORDER) * len(chess_forge.FACTIONS), 12)
+
     def test_all_six_roles_are_required(self):
         data=json.loads(MANIFEST.read_text(encoding="utf-8"))
         self.assertEqual(set(data["pieces"]), set(forge_contract.PIECES))
@@ -113,6 +150,8 @@ class Phase1ForgeContractTests(unittest.TestCase):
         self.assertIn("metahuman_tumbo", source.lower())
         self.assertIn('or "tumbo_face" in name', source)
         self.assertIn('or "male_face" in name', source)
+        self.assertIn("image_ref", source)
+        self.assertIn("private_face_preview", source)
 
     def test_raw_face_photo_can_never_be_texture_dependency(self):
         source=FORGE.read_text(encoding="utf-8")
@@ -145,6 +184,11 @@ class Phase1ForgeContractTests(unittest.TestCase):
             manifest.write_text(json.dumps(data), encoding="utf-8")
             errors=forge_contract.validate(manifest)
         self.assertTrue(any("raw face.jpg may never be a forge source" in e for e in errors))
+
+    def test_cape_pieces_require_faction_cloth_material_region(self):
+        source=FORGE.read_text(encoding="utf-8")
+        self.assertIn('{"cape", "long_cape"} & required_tags', source)
+        self.assertIn("cape-bearing piece must expose a CAPE-tagged cloth material slot", source)
 
     def test_queen_source_cannot_point_at_tumbo_head(self):
         data=json.loads(MANIFEST.read_text(encoding="utf-8"))
