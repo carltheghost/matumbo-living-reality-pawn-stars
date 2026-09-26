@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib.util
 import json
 import math
 import pathlib
@@ -114,8 +115,19 @@ def _args(argv: list[str]) -> argparse.Namespace:
 
 def _load_manifest(path: pathlib.Path) -> dict[str, Any]:
     data = json.loads(path.read_text(encoding="utf-8"))
-    if data.get("schemaVersion") != 1:
-        raise ForgeError("forge manifest schemaVersion must be 1")
+
+    # Runtime and CI must enforce the exact same canonical contract. Loading
+    # forge_contract.py directly from this directory avoids relying on Blender's
+    # working-directory/sys.path behavior.
+    contract_path = pathlib.Path(__file__).resolve().with_name("forge_contract.py")
+    spec = importlib.util.spec_from_file_location("phase1_forge_contract", contract_path)
+    if spec is None or spec.loader is None:
+        raise ForgeError(f"Unable to load forge contract: {contract_path}")
+    contract = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(contract)
+    errors = contract.validate_data(data)
+    if errors:
+        raise ForgeError("Manifest violates Phase 1 contract:\n- " + "\n- ".join(errors))
     return data
 
 
@@ -380,6 +392,11 @@ def _apply_faction_look(target: BuildTarget, objects: list[Any], manifest: dict[
         raise ForgeError(
             f"{target.slug}: source materials must expose ARMOR and FILIGREE tagged slots"
         )
+    required_tags = {str(tag).lower() for tag in target.spec.get("requiredTags", [])}
+    if {"cape", "long_cape"} & required_tags and assigned["cloth"] == 0:
+        raise ForgeError(
+            f"{target.slug}: cape-bearing piece must expose a CAPE-tagged cloth material slot"
+        )
 
 
 def _attach_rigid_parts(
@@ -515,6 +532,22 @@ def _validate_queen_face_policy(target: BuildTarget, objects: Iterable[Any]) -> 
                 or "metahuman_tumbo" in name
             ):
                 violations.append(f"{obj.name}:{mat.name}")
+            if mat.use_nodes and mat.node_tree is not None:
+                for node in mat.node_tree.nodes:
+                    image = getattr(node, "image", None)
+                    if image is None:
+                        continue
+                    image_ref = " ".join((
+                        str(getattr(image, "name", "")),
+                        str(getattr(image, "filepath", "") or ""),
+                    )).lower()
+                    if any(token in image_ref for token in (
+                        "metahuman_tumbo", "tumbo_face", "male_face",
+                        "private_face_preview",
+                    )):
+                        violations.append(
+                            f"{obj.name}:{mat.name}:{getattr(image, 'name', '<image>')}"
+                        )
     if violations:
         raise ForgeError(
             f"{target.slug}: queen character law forbids Tumbo/private male-face assets: "
