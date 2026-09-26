@@ -126,10 +126,15 @@ class Phase1ForgeContractTests(unittest.TestCase):
             self.assertIn("--repository-root", runner.read_text(encoding="utf-8"))
         publish=PUBLISH.read_text(encoding="utf-8")
         self.assertIn("[ValidateSet('all')]", publish)
-        self.assertIn("--repository-root", publish)
+        self.assertIn("phase1-review-manifest.json", publish)
+        self.assertIn("Get-FileHash -Algorithm SHA256", publish)
+        self.assertIn("sourceReviewManifestSha256", publish)
+        self.assertIn("TUMBO_EXPLICIT_VISUAL_APPROVAL", publish)
         self.assertIn(".phase1-approved-staging", publish)
         self.assertIn("Publication transaction incomplete", publish)
         self.assertIn("$installed", publish)
+        self.assertNotIn("--publish-approved", publish)
+        self.assertNotIn("BLENDER_EXE", publish)
 
 if __name__ == "__main__":
     unittest.main()
