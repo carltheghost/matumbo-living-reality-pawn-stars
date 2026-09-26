@@ -6,6 +6,7 @@ if ($env:TUMBO_FACE_PUBLICATION_APPROVED -ne 'YES') {
 }
 
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
+& (Join-Path $here 'preflight_phase1.ps1')
 $repo = Resolve-Path (Join-Path $here '..\..')
 $private = if ($env:TUMBO_CHESS_PRIVATE_REVIEW_ROOT) {
   $env:TUMBO_CHESS_PRIVATE_REVIEW_ROOT
