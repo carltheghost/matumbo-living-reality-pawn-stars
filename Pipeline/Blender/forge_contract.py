@@ -127,6 +127,17 @@ def validate_data(m: dict[str, Any]) -> list[str]:
         for source in sources:
             if not _safe_relative(source):
                 errors.append(f"{piece}: unsafe source path {source!r}")
+            if pathlib.PurePosixPath(str(source).replace("\\", "/")).name.lower() == "face.jpg":
+                errors.append(f"{piece}: raw face.jpg may never be a forge source")
+
+        source_text = " ".join(str(x).lower().replace("\\", "/") for x in sources)
+        if piece == "queen":
+            if any(token in source_text for token in ("tumbo_metahuman", "tumbo_face", "male_face")):
+                errors.append("queen: Tumbo/male likeness source is forbidden")
+            if "faces/queen_regal_metahuman_head.fbx" not in source_text:
+                errors.append("queen: missing dedicated feminine MetaHuman head source")
+        elif "faces/tumbo_metahuman_head.fbx" not in source_text:
+            errors.append(f"{piece}: missing Tumbo MetaHuman head source")
 
         rig_source = spec.get("rigSource")
         if not rig_source or rig_source not in sources:
@@ -180,6 +191,17 @@ def validate_data(m: dict[str, Any]) -> list[str]:
                     errors.append(
                         f"{faction}/{material_name}/{slot}: unsafe texture path {source!r}"
                     )
+                if pathlib.PurePosixPath(str(source).replace("\\", "/")).name.lower() == "face.jpg":
+                    errors.append(
+                        f"{faction}/{material_name}/{slot}: raw face.jpg texture is forbidden"
+                    )
+
+        armor = fs.get("armor", {})
+        expected_surface = "obsidian" if faction == "black" else "ivory"
+        if float(armor.get("metallic", 1.0)) > 0.05:
+            errors.append(
+                f"{faction}/armor: {expected_surface} must remain dielectric, not metallic"
+            )
 
         for material_name, identity in identities.items():
             actual = str(fs.get(material_name, {}).get("surfaceClass", "")).lower()
