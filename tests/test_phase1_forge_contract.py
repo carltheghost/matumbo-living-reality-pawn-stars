@@ -13,6 +13,8 @@ PUBLISH = ROOT / "Pipeline" / "Blender" / "publish_approved.ps1"
 PROMOTE = ROOT / "Pipeline" / "Blender" / "promote_approved.ps1"
 APPROVE = ROOT / "Pipeline" / "Blender" / "approve_review.ps1"
 REVIEW_RUNNER = ROOT / "Pipeline" / "Blender" / "run_phase1_review.ps1"
+GITIGNORE = ROOT / ".gitignore"
+WORKFLOW = ROOT / ".github" / "workflows" / "phase1-forge-contract.yml"
 RUNNERS = [
     ROOT / "Pipeline" / "Blender" / "run_black.ps1",
     ROOT / "Pipeline" / "Blender" / "run_white.ps1",
@@ -153,6 +155,15 @@ class Phase1ForgeContractTests(unittest.TestCase):
         self.assertIn("Publication remains CLOSED", review)
         self.assertIn("preview-$slug.png", review)
         self.assertIn("qc-$slug.json", review)
+
+    def test_git_guards_reject_raw_private_likeness_sources(self):
+        ignore=GITIGNORE.read_text(encoding="utf-8").lower()
+        workflow=WORKFLOW.read_text(encoding="utf-8").lower()
+        self.assertIn("face.jpg", ignore)
+        self.assertIn("tumbo_metahuman_head.fbx", ignore)
+        self.assertIn("reject private likeness sources from git", workflow)
+        self.assertIn("git ls-files", workflow)
+        self.assertIn("tumbo_metahuman_head", workflow)
 
     def test_private_paths_and_exact_reviewed_publication_are_enforced(self):
         source=FORGE.read_text(encoding="utf-8")
