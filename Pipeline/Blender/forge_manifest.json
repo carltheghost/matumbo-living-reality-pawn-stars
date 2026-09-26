@@ -223,6 +223,8 @@
       ],
       "requiredTags": [
         "centaur",
+        "armored_legs",
+        "humanoid_torso",
         "horse_head_helm",
         "horse_barrel",
         "four_legs",
