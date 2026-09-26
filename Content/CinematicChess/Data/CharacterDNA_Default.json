@@ -1,0 +1,31 @@
+{
+  "characters": [
+    {
+      "id": "White_King",
+      "pieceType": "King",
+      "faction": "White",
+      "facePipeline": "MetaHuman"
+    },
+    {
+      "id": "Black_King",
+      "pieceType": "King",
+      "faction": "Black",
+      "facePipeline": "MetaHuman"
+    },
+    {
+      "id": "White_Knight",
+      "pieceType": "Knight",
+      "architecture": "Centaur"
+    },
+    {
+      "id": "Black_Knight",
+      "pieceType": "Knight",
+      "architecture": "Centaur"
+    },
+    {
+      "id": "Rook",
+      "pieceType": "Rook",
+      "weapon": "MassiveCastleStaff"
+    }
+  ]
+}
