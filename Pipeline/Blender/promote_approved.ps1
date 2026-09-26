@@ -33,6 +33,15 @@ if ($approval.reviewRoot -and
   throw 'Approval receipt belongs to a different private review root.'
 }
 
+$reviewManifestPath = Join-Path $review ([string]$approval.sourceReviewManifest)
+if (-not (Test-Path $reviewManifestPath -PathType Leaf)) {
+  throw 'Approved phase1 review manifest is missing.'
+}
+$reviewManifestHash = (Get-FileHash -Algorithm SHA256 $reviewManifestPath).Hash.ToLowerInvariant()
+if ($reviewManifestHash -ne ([string]$approval.sourceReviewManifestSha256).ToLowerInvariant()) {
+  throw 'The 12-piece review manifest changed after Tumbo approval.'
+}
+
 $pieces = @('king','queen','bishop','knight','rook','pawn')
 $factions = @('black','white')
 $verified = @()
