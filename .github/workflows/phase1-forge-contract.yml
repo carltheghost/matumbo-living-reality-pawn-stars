@@ -1,0 +1,28 @@
+name: phase1-forge-contract
+on:
+  pull_request:
+    paths:
+      - 'Pipeline/Blender/**'
+      - 'Source/Schema/**'
+      - 'Docs/Phase1_Cinematic_Piece_Forge.md'
+      - 'tests/test_phase1_forge_contract.py'
+  push:
+    branches: ['phase1/**']
+    paths:
+      - 'Pipeline/Blender/**'
+      - 'Source/Schema/**'
+      - 'tests/test_phase1_forge_contract.py'
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Syntax check forge
+        run: python -m py_compile Pipeline/Blender/chess_forge.py Pipeline/Blender/forge_contract.py
+      - name: Validate forge manifest
+        run: python Pipeline/Blender/forge_contract.py Pipeline/Blender/forge_manifest.json
+      - name: Run Phase 1 contract tests
+        run: python -m unittest tests.test_phase1_forge_contract -v
