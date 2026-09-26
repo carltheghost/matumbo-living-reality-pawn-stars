@@ -87,6 +87,31 @@ class Phase1ForgeContractTests(unittest.TestCase):
         self.assertEqual(tuple(chess_forge.FACTIONS), ("black","white"))
         self.assertEqual(len(chess_forge.PIECE_ORDER) * len(chess_forge.FACTIONS), 12)
 
+    def test_exact_piece_laws_are_locked(self):
+        data=json.loads(MANIFEST.read_text(encoding="utf-8"))
+        king=set(data["pieces"]["king"]["requiredTags"])
+        self.assertTrue({"tall_crown","long_cape","royal_staff","sword_hip","armor","filigree"}.issubset(king))
+        knight=set(data["pieces"]["knight"]["requiredTags"])
+        centaur={"centaur","humanoid_torso","horse_head_helm","horse_barrel","four_legs","armored_legs","hooves","tail","sword","tower_shield","armor","filigree"}
+        self.assertTrue(centaur.issubset(knight))
+
+    def test_common_armor_and_filigree_are_canonical_not_accidental(self):
+        data=json.loads(MANIFEST.read_text(encoding="utf-8"))
+        data["pieces"]["pawn"]["requiredTags"].remove("filigree")
+        errors=forge_contract.validate_data(data)
+        self.assertTrue(any("pawn: missing law tags" in e and "filigree" in e for e in errors))
+
+    def test_static_contract_rejects_raw_face_photo_sources(self):
+        data=json.loads(MANIFEST.read_text(encoding="utf-8"))
+        data["pieces"]["king"]["sources"].append("private/face.jpg")
+        errors=forge_contract.validate_data(data)
+        self.assertTrue(any("raw face.jpg may never be a forge source" in e for e in errors))
+
+    def test_runtime_uses_canonical_manifest_contract(self):
+        source=FORGE.read_text(encoding="utf-8")
+        self.assertIn("forge_contract.py", source)
+        self.assertIn("contract.validate_data(data)", source)
+
     def test_all_six_roles_are_required(self):
         data=json.loads(MANIFEST.read_text(encoding="utf-8"))
         self.assertEqual(set(data["pieces"]), set(forge_contract.PIECES))
