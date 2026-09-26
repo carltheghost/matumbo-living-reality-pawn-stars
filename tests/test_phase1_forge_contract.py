@@ -92,6 +92,40 @@ class Phase1ForgeContractTests(unittest.TestCase):
         self.assertIn("queen character law forbids Tumbo/private male-face assets", source)
         self.assertIn("private_face_preview", source.lower())
         self.assertIn("metahuman_tumbo", source.lower())
+        self.assertIn('or "tumbo_face" in name', source)
+        self.assertIn('or "male_face" in name', source)
+
+    def test_raw_face_photo_can_never_be_texture_dependency(self):
+        source=FORGE.read_text(encoding="utf-8")
+        self.assertIn("def _validate_raw_face_reference_absent(", source)
+        self.assertIn("_validate_raw_face_reference_absent(target, imported)", source)
+        self.assertIn("raw face.jpg texture dependency detected", source)
+        self.assertIn("bpy.path.abspath", source)
+
+    def test_all_export_bones_use_mixamorig_namespace(self):
+        source=FORGE.read_text(encoding="utf-8")
+        self.assertIn('bad = sorted(b.name for b in bones if not b.name.startswith("mixamorig:"))', source)
+        self.assertIn("every export bone must use mixamorig:* naming", source)
+
+    def test_manifest_locks_obsidian_ivory_and_gold_semantics(self):
+        data=json.loads(MANIFEST.read_text(encoding="utf-8"))
+        self.assertEqual(data["materials"]["black"]["armor"]["surfaceClass"], "obsidian")
+        self.assertEqual(data["materials"]["white"]["armor"]["surfaceClass"], "ivory")
+        self.assertLessEqual(float(data["materials"]["black"]["armor"]["metallic"]), 0.05)
+        self.assertLessEqual(float(data["materials"]["white"]["armor"]["metallic"]), 0.05)
+        self.assertEqual(data["materials"]["black"]["gold"]["surfaceClass"], "gold")
+        self.assertEqual(data["materials"]["white"]["gold"]["surfaceClass"], "gold")
+        source=FORGE.read_text(encoding="utf-8")
+        self.assertIn('multiply.operation = "MULTIPLY"', source)
+
+    def test_queen_source_cannot_point_at_tumbo_head(self):
+        data=json.loads(MANIFEST.read_text(encoding="utf-8"))
+        data["pieces"]["queen"]["sources"].append("faces/tumbo_metahuman_head.fbx")
+        with tempfile.TemporaryDirectory() as tmp:
+            manifest=pathlib.Path(tmp) / "manifest.json"
+            manifest.write_text(json.dumps(data), encoding="utf-8")
+            errors=forge_contract.validate(manifest)
+        self.assertTrue(any("queen: Tumbo/male likeness source is forbidden" in e for e in errors))
 
     def test_deforming_meshes_require_export_rig_weights(self):
         source=FORGE.read_text(encoding="utf-8")
