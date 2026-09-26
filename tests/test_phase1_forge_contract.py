@@ -33,6 +33,23 @@ class Phase1ForgeContractTests(unittest.TestCase):
     def test_manifest_obeys_character_law(self):
         self.assertEqual(forge_contract.validate(MANIFEST), [])
 
+    def test_king_exact_silhouette_law_is_locked(self):
+        data=json.loads(MANIFEST.read_text(encoding="utf-8"))
+        tags=set(data["pieces"]["king"]["requiredTags"])
+        self.assertTrue({"tall_crown","long_cape","royal_staff","sword_hip"}.issubset(tags))
+        self.assertIn("tall_crown", data["pieces"]["king"]["rigidMounts"])
+
+    def test_knight_exact_centaur_law_is_locked(self):
+        data=json.loads(MANIFEST.read_text(encoding="utf-8"))
+        tags=set(data["pieces"]["knight"]["requiredTags"])
+        required={"centaur","humanoid_torso","horse_head_helm","horse_barrel","four_legs","armored_legs","hooves","tail","sword","tower_shield"}
+        self.assertTrue(required.issubset(tags))
+
+    def test_runtime_loads_same_canonical_contract_as_ci(self):
+        source=FORGE.read_text(encoding="utf-8")
+        self.assertIn("forge_contract.py", source)
+        self.assertIn("contract.validate_data(data)", source)
+
     def test_all_six_roles_are_required(self):
         data=json.loads(MANIFEST.read_text(encoding="utf-8"))
         self.assertEqual(set(data["pieces"]), set(forge_contract.PIECES))
@@ -119,6 +136,15 @@ class Phase1ForgeContractTests(unittest.TestCase):
         self.assertEqual(data["materials"]["white"]["gold"]["surfaceClass"], "gold")
         source=FORGE.read_text(encoding="utf-8")
         self.assertIn('multiply.operation = "MULTIPLY"', source)
+
+    def test_static_contract_rejects_raw_face_photo_sources(self):
+        data=json.loads(MANIFEST.read_text(encoding="utf-8"))
+        data["pieces"]["king"]["sources"].append("private/face.jpg")
+        with tempfile.TemporaryDirectory() as tmp:
+            manifest=pathlib.Path(tmp) / "manifest.json"
+            manifest.write_text(json.dumps(data), encoding="utf-8")
+            errors=forge_contract.validate(manifest)
+        self.assertTrue(any("raw face.jpg may never be a forge source" in e for e in errors))
 
     def test_queen_source_cannot_point_at_tumbo_head(self):
         data=json.loads(MANIFEST.read_text(encoding="utf-8"))
