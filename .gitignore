@@ -1,0 +1,7 @@
+# Phase 1 private likeness / local sculpt sources. Never publish these.
+face.jpg
+**/face.jpg
+.private/
+chess/review-private/
+Pipeline/Blender/source-private/
+*.blend1
