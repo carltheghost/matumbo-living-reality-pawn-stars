@@ -1,1 +1,109 @@
-{"characters":[{"armorSetID":"ARM_Black_SovereignPlate","faceProfileID":"FACE_Tumbo_Male_01","faction":"Black","id":"CHR_Black_King_01","isCentaurArchitecture":false,"materialSetID":"MAT_Black_ObsidianGold","notes":"Sovereign plate, crowned helm, scepter-blade. Tallest silhouette on the board.","pieceType":"King","scale":1.15,"usesMetaHumanFace":true,"weaponAttachmentID":"WPN_King_ScepterBlade"},{"armorSetID":"ARM_White_SovereignPlate","faceProfileID":"FACE_Tumbo_Male_01","faction":"White","id":"CHR_White_King_01","isCentaurArchitecture":false,"materialSetID":"MAT_White_IvoryGold","notes":"Ivory sovereign plate with gold trim, crowned helm, scepter-blade.","pieceType":"King","scale":1.15,"usesMetaHumanFace":true,"weaponAttachmentID":"WPN_King_ScepterBlade"},{"armorSetID":"ARM_Black_RegalPlate","faceProfileID":"FACE_Feminine_Regal_01","faction":"Black","id":"CHR_Black_Queen_01","isCentaurArchitecture":false,"materialSetID":"MAT_Black_ObsidianGold","notes":"Feminine regal identity. Obsidian plate with gold filigree, war-fan blades.","pieceType":"Queen","scale":1.1,"usesMetaHumanFace":true,"weaponAttachmentID":"WPN_Queen_WarFanBlades"},{"armorSetID":"ARM_White_RegalPlate","faceProfileID":"FACE_Feminine_Regal_01","faction":"White","id":"CHR_White_Queen_01","isCentaurArchitecture":false,"materialSetID":"MAT_White_IvoryGold","notes":"Feminine regal identity. Ivory plate with gold trim, war-fan blades.","pieceType":"Queen","scale":1.1,"usesMetaHumanFace":true,"weaponAttachmentID":"WPN_Queen_WarFanBlades"},{"armorSetID":"ARM_Black_ClericPlate","faceProfileID":"FACE_Tumbo_Male_01","faction":"Black","id":"CHR_Black_Bishop_01","isCentaurArchitecture":false,"materialSetID":"MAT_Black_ObsidianGold","notes":"Mitred helm, cleric plate, crosier staff. Diagonal-lattice engraving on armor.","pieceType":"Bishop","scale":1.05,"usesMetaHumanFace":true,"weaponAttachmentID":"WPN_Bishop_CrosierStaff"},{"armorSetID":"ARM_White_ClericPlate","faceProfileID":"FACE_Tumbo_Male_01","faction":"White","id":"CHR_White_Bishop_01","isCentaurArchitecture":false,"materialSetID":"MAT_White_IvoryGold","notes":"Mitred helm, ivory cleric plate, crosier staff.","pieceType":"Bishop","scale":1.05,"usesMetaHumanFace":true,"weaponAttachmentID":"WPN_Bishop_CrosierStaff"},{"armorSetID":"ARM_Black_CentaurBarding","centaurSpec":{"body":"Full horse body with armored barding","helm":"HorseHeadHelm_Obsidian","locomotion":"Quadruped blend space; rears on capture","torso":"Humanoid warrior torso with MetaHuman face under a horse-head helm"},"faceProfileID":"FACE_Tumbo_Male_01","faction":"Black","id":"CHR_Black_Knight_01","isCentaurArchitecture":true,"materialSetID":"MAT_Black_ObsidianGold","notes":"Centaur architecture: warrior torso, horse-head helm, full horse body.","pieceType":"Knight","scale":1.2,"usesMetaHumanFace":true,"weaponAttachmentID":"WPN_Knight_Lance"},{"armorSetID":"ARM_White_CentaurBarding","centaurSpec":{"body":"Full horse body with armored barding","helm":"HorseHeadHelm_Ivory","locomotion":"Quadruped blend space; rears on capture","torso":"Humanoid warrior torso with MetaHuman face under a horse-head helm"},"faceProfileID":"FACE_Tumbo_Male_01","faction":"White","id":"CHR_White_Knight_01","isCentaurArchitecture":true,"materialSetID":"MAT_White_IvoryGold","notes":"Centaur architecture: warrior torso, horse-head helm, full horse body.","pieceType":"Knight","scale":1.2,"usesMetaHumanFace":true,"weaponAttachmentID":"WPN_Knight_Lance"},{"armorSetID":"ARM_Black_SiegePlate","faceProfileID":"FACE_Tumbo_Male_01","faction":"Black","id":"CHR_Black_Rook_01","isCentaurArchitecture":false,"materialSetID":"MAT_Black_ObsidianGold","notes":"Siege plate, crenellated pauldrons, massive castle staff — the rook's signature.","pieceType":"Rook","scale":1.1,"usesMetaHumanFace":true,"weaponAttachmentID":"WPN_Rook_MassiveCastleStaff"},{"armorSetID":"ARM_White_SiegePlate","faceProfileID":"FACE_Tumbo_Male_01","faction":"White","id":"CHR_White_Rook_01","isCentaurArchitecture":false,"materialSetID":"MAT_White_IvoryGold","notes":"Ivory siege plate, crenellated pauldrons, massive castle staff.","pieceType":"Rook","scale":1.1,"usesMetaHumanFace":true,"weaponAttachmentID":"WPN_Rook_MassiveCastleStaff"},{"armorSetID":"ARM_Black_SquireMail","faceProfileID":"FACE_Tumbo_Male_01","faction":"Black","id":"CHR_Black_Pawn_01","isCentaurArchitecture":false,"materialSetID":"MAT_Black_ObsidianGold","notes":"Squire mail, rounded helm, short blade. Smallest silhouette; eight per army.","pieceType":"Pawn","scale":0.95,"usesMetaHumanFace":true,"weaponAttachmentID":"WPN_Pawn_ShortBlade"},{"armorSetID":"ARM_White_SquireMail","faceProfileID":"FACE_Tumbo_Male_01","faction":"White","id":"CHR_White_Pawn_01","isCentaurArchitecture":false,"materialSetID":"MAT_White_IvoryGold","notes":"Ivory squire mail, rounded helm, short blade. Smallest silhouette; eight per army.","pieceType":"Pawn","scale":0.95,"usesMetaHumanFace":true,"weaponAttachmentID":"WPN_Pawn_ShortBlade"}],"description":"Character DNA for all twelve cinematic chess pieces. Every piece carries a stable identity (face/armor/material/weapon IDs plus architecture flags) that the Cinematic Chess Entity Framework resolves at spawn time. Face-bearing assets require Tumbo's approval before any public use.","engine":"Unreal Engine 5.5.4","identityRules":{"faceApproval":"No face-bearing asset ships publicly without Tumbo's explicit approval.","malePieces":"Male human-headed pieces use Tumbo's approved face reference (FACE_Tumbo_Male_01) through the MetaHuman facial pipeline.","queens":"Queens carry a separate feminine MetaHuman identity (FACE_Feminine_Regal_01) — never the male face reference."},"version":"0.2"}
+{
+  "version": "0.3",
+  "engine": "Unreal Engine 5.5.4",
+  "description": "Phase 1 character DNA for the twelve cinematic chess warriors. Geometry comes from the sculpted-hybrid forge; identity remains data-driven.",
+  "identityRules": {
+    "faceApproval": "No Tumbo face-bearing asset, screenshot, GLB, texture, or demo build is published without Tumbo's explicit approval.",
+    "malePieces": "King, Bishop, Knight warrior torso, Rook, and Pawn use FACE_Tumbo_Male_01 only through the local/private MetaHuman review pipeline until approved.",
+    "queens": "Queens use FACE_Feminine_Regal_01 and never use Tumbo's face texture.",
+    "materials": "Black = obsidian + gold filigree; White = ivory + gold. Gold trim is mandatory on every role."
+  },
+  "characters": [
+    {
+      "id": "CHR_Black_King_01", "pieceType": "King", "faction": "Black", "scale": 1.15,
+      "faceProfileID": "FACE_Tumbo_Male_01", "usesMetaHumanFace": true, "isCentaurArchitecture": false,
+      "armorSetID": "ARM_Black_SovereignPlate", "materialSetID": "MAT_Black_ObsidianGold",
+      "weaponAttachmentID": "WPN_King_RoyalStaff",
+      "notes": "Tall crown, long cape, royal staff, sword at hip; heroic masculine face."
+    },
+    {
+      "id": "CHR_White_King_01", "pieceType": "King", "faction": "White", "scale": 1.15,
+      "faceProfileID": "FACE_Tumbo_Male_01", "usesMetaHumanFace": true, "isCentaurArchitecture": false,
+      "armorSetID": "ARM_White_SovereignPlate", "materialSetID": "MAT_White_IvoryGold",
+      "weaponAttachmentID": "WPN_King_RoyalStaff",
+      "notes": "Tall crown, long cape, royal staff, sword at hip; heroic masculine face."
+    },
+    {
+      "id": "CHR_Black_Queen_01", "pieceType": "Queen", "faction": "Black", "scale": 1.10,
+      "faceProfileID": "FACE_Feminine_Regal_01", "usesMetaHumanFace": true, "isCentaurArchitecture": false,
+      "armorSetID": "ARM_Black_RegalPlate", "materialSetID": "MAT_Black_ObsidianGold",
+      "weaponAttachmentID": "WPN_Queen_CrookStaff",
+      "notes": "Feminine always: elegant crown, long hair, cape, crook staff. Never Tumbo face texture."
+    },
+    {
+      "id": "CHR_White_Queen_01", "pieceType": "Queen", "faction": "White", "scale": 1.10,
+      "faceProfileID": "FACE_Feminine_Regal_01", "usesMetaHumanFace": true, "isCentaurArchitecture": false,
+      "armorSetID": "ARM_White_RegalPlate", "materialSetID": "MAT_White_IvoryGold",
+      "weaponAttachmentID": "WPN_Queen_CrookStaff",
+      "notes": "Feminine always: elegant crown, long hair, cape, crook staff. Never Tumbo face texture."
+    },
+    {
+      "id": "CHR_Black_Bishop_01", "pieceType": "Bishop", "faction": "Black", "scale": 1.05,
+      "faceProfileID": "FACE_Tumbo_Male_01", "usesMetaHumanFace": true, "isCentaurArchitecture": false,
+      "armorSetID": "ARM_Black_ClericPlate", "materialSetID": "MAT_Black_ObsidianGold",
+      "weaponAttachmentID": "WPN_Bishop_CrookStaff",
+      "notes": "Tall mitre, crook staff, cape; heroic masculine face."
+    },
+    {
+      "id": "CHR_White_Bishop_01", "pieceType": "Bishop", "faction": "White", "scale": 1.05,
+      "faceProfileID": "FACE_Tumbo_Male_01", "usesMetaHumanFace": true, "isCentaurArchitecture": false,
+      "armorSetID": "ARM_White_ClericPlate", "materialSetID": "MAT_White_IvoryGold",
+      "weaponAttachmentID": "WPN_Bishop_CrookStaff",
+      "notes": "Tall mitre, crook staff, cape; heroic masculine face."
+    },
+    {
+      "id": "CHR_Black_Knight_01", "pieceType": "Knight", "faction": "Black", "scale": 1.20,
+      "faceProfileID": "FACE_Tumbo_Male_01", "usesMetaHumanFace": true, "isCentaurArchitecture": true,
+      "armorSetID": "ARM_Black_CentaurBarding", "materialSetID": "MAT_Black_ObsidianGold",
+      "weaponAttachmentID": "WPN_Knight_Sword",
+      "centaurSpec": {
+        "torso": "Humanoid armored warrior torso beneath a horse-head helm",
+        "body": "Full horse barrel, four armored legs, hooves and tail",
+        "offHand": "WPN_Knight_TowerShield",
+        "locomotion": "Quadruped Mixamo-namespaced extension; rears on capture"
+      },
+      "notes": "True centaur only: never a two-legged humanoid shortcut. Sword + tower shield."
+    },
+    {
+      "id": "CHR_White_Knight_01", "pieceType": "Knight", "faction": "White", "scale": 1.20,
+      "faceProfileID": "FACE_Tumbo_Male_01", "usesMetaHumanFace": true, "isCentaurArchitecture": true,
+      "armorSetID": "ARM_White_CentaurBarding", "materialSetID": "MAT_White_IvoryGold",
+      "weaponAttachmentID": "WPN_Knight_Sword",
+      "centaurSpec": {
+        "torso": "Humanoid armored warrior torso beneath a horse-head helm",
+        "body": "Full horse barrel, four armored legs, hooves and tail",
+        "offHand": "WPN_Knight_TowerShield",
+        "locomotion": "Quadruped Mixamo-namespaced extension; rears on capture"
+      },
+      "notes": "True centaur only: never a two-legged humanoid shortcut. Sword + tower shield."
+    },
+    {
+      "id": "CHR_Black_Rook_01", "pieceType": "Rook", "faction": "Black", "scale": 1.10,
+      "faceProfileID": "FACE_Tumbo_Male_01", "usesMetaHumanFace": true, "isCentaurArchitecture": false,
+      "armorSetID": "ARM_Black_SiegePlate", "materialSetID": "MAT_Black_ObsidianGold",
+      "weaponAttachmentID": "WPN_Rook_MassiveCastleStaff",
+      "notes": "Tower pauldrons, tower shield, cape. Staff crown is a massive castle with battlements, side turrets and a visible gate. Heroic masculine face."
+    },
+    {
+      "id": "CHR_White_Rook_01", "pieceType": "Rook", "faction": "White", "scale": 1.10,
+      "faceProfileID": "FACE_Tumbo_Male_01", "usesMetaHumanFace": true, "isCentaurArchitecture": false,
+      "armorSetID": "ARM_White_SiegePlate", "materialSetID": "MAT_White_IvoryGold",
+      "weaponAttachmentID": "WPN_Rook_MassiveCastleStaff",
+      "notes": "Tower pauldrons, tower shield, cape. Staff crown is a massive castle with battlements, side turrets and a visible gate. Heroic masculine face."
+    },
+    {
+      "id": "CHR_Black_Pawn_01", "pieceType": "Pawn", "faction": "Black", "scale": 0.95,
+      "faceProfileID": "FACE_Tumbo_Male_01", "usesMetaHumanFace": true, "isCentaurArchitecture": false,
+      "armorSetID": "ARM_Black_LineInfantry", "materialSetID": "MAT_Black_ObsidianGold",
+      "weaponAttachmentID": "WPN_Pawn_Spear",
+      "notes": "Kettle helm with brim, spear, full armor silhouette; heroic masculine face."
+    },
+    {
+      "id": "CHR_White_Pawn_01", "pieceType": "Pawn", "faction": "White", "scale": 0.95,
+      "faceProfileID": "FACE_Tumbo_Male_01", "usesMetaHumanFace": true, "isCentaurArchitecture": false,
+      "armorSetID": "ARM_White_LineInfantry", "materialSetID": "MAT_White_IvoryGold",
+      "weaponAttachmentID": "WPN_Pawn_Spear",
+      "notes": "Kettle helm with brim, spear, full armor silhouette; heroic masculine face."
+    }
+  ]
+}
