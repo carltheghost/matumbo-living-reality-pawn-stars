@@ -139,8 +139,8 @@
         "cloth/king_cape.fbx"
       ],
       "requiredTags": [
-        "crown",
-        "cape",
+        "tall_crown",
+        "long_cape",
         "royal_staff",
         "sword_hip",
         "armor",
@@ -148,10 +148,10 @@
         "metahuman_tumbo"
       ],
       "rigidMounts": {
-        "crown": "mixamorig:Head",
         "royal_staff": "mixamorig:RightHand",
         "sword_hip": "mixamorig:Hips",
-        "metahuman_tumbo": "mixamorig:Head"
+        "metahuman_tumbo": "mixamorig:Head",
+        "tall_crown": "mixamorig:Head"
       },
       "rigSource": "bodies/male_hero.fbx"
     },
