@@ -12,6 +12,9 @@ New-Item -ItemType Directory -Force -Path $private | Out-Null
 Write-Host '=== maTumbo Cinematic Chess Phase 1: private 12-piece review forge ==='
 Write-Host "Review root: $private"
 
+& (Join-Path $here 'preflight_phase1.ps1')
+if ($LASTEXITCODE -ne 0) { throw "Phase 1 preflight failed: $LASTEXITCODE" }
+
 & (Join-Path $here 'run_black.ps1')
 if ($LASTEXITCODE -ne 0) { throw "Black-army forge failed: $LASTEXITCODE" }
 
@@ -45,18 +48,27 @@ foreach ($side in $factions) {
     }
 
     $qcJson = Get-Content -Raw $qc | ConvertFrom-Json
-    if ($qcJson.status -ne 'PASS' -or $qcJson.piece -ne $slug) {
+    if ($qcJson.status -ne 'PASS' -or $qcJson.piece -ne $slug -or $qcJson.privacy -ne 'private-review') {
       throw "QC receipt failed or mismatched: $qc"
+    }
+
+    $previewHash = (Get-FileHash -Algorithm SHA256 $preview).Hash.ToLowerInvariant()
+    $glbHash = (Get-FileHash -Algorithm SHA256 $glb).Hash.ToLowerInvariant()
+    if ($previewHash -ne ([string]$qcJson.outputs.preview.sha256).ToLowerInvariant()) {
+      throw "Preview/QC hash mismatch before review: $slug"
+    }
+    if ($glbHash -ne ([string]$qcJson.outputs.glb.sha256).ToLowerInvariant()) {
+      throw "GLB/QC hash mismatch before review: $slug"
     }
 
     $records += [pscustomobject]@{
       piece = $slug
       preview = [IO.Path]::GetFileName($preview)
       previewBytes = $previewInfo.Length
-      previewSha256 = (Get-FileHash -Algorithm SHA256 $preview).Hash.ToLowerInvariant()
+      previewSha256 = $previewHash
       glb = [IO.Path]::GetFileName($glb)
       glbBytes = $glbInfo.Length
-      glbSha256 = (Get-FileHash -Algorithm SHA256 $glb).Hash.ToLowerInvariant()
+      glbSha256 = $glbHash
       qc = [IO.Path]::GetFileName($qc)
     }
   }
@@ -124,3 +136,5 @@ Write-Host 'PASS: all 12 private GLBs, PNG previews, and QC receipts exist.'
 Write-Host "Review manifest: $manifestPath"
 Write-Host "Visual review board: $reviewPath"
 Write-Host 'Publication remains CLOSED until Tumbo approves every piece.'
+Write-Host "NEXT: open $reviewPath, inspect all 12 at full resolution, then run:"
+Write-Host '  .\Pipeline\Blender\approve_review.ps1 -IApproveAll12'
