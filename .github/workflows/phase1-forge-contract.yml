@@ -26,3 +26,17 @@ jobs:
         run: python Pipeline/Blender/forge_contract.py Pipeline/Blender/forge_manifest.json
       - name: Run Phase 1 contract tests
         run: python -m unittest tests.test_phase1_forge_contract -v
+      - name: Parse PowerShell forge runners
+        shell: pwsh
+        run: |
+          $errors = @()
+          Get-ChildItem Pipeline/Blender/*.ps1 | ForEach-Object {
+            $tokens = $null
+            $parseErrors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$tokens, [ref]$parseErrors) | Out-Null
+            if ($parseErrors) { $errors += $parseErrors }
+          }
+          if ($errors.Count -gt 0) {
+            $errors | Format-List | Out-String | Write-Error
+            exit 1
+          }
