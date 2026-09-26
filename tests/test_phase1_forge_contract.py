@@ -73,6 +73,12 @@ class Phase1ForgeContractTests(unittest.TestCase):
         self.assertIn("for slot in obj.material_slots", source)
         self.assertNotIn('m for m in bpy.data.materials if m.name == "PRIVATE_FACE_PREVIEW"', source)
 
+    def test_queen_explicitly_rejects_private_male_face_assets(self):
+        source=FORGE.read_text(encoding="utf-8")
+        self.assertIn("_validate_queen_face_policy(target, imported)", source)
+        self.assertIn("queen character law forbids Tumbo/private male-face assets", source)
+        self.assertIn("private_face_preview", source.lower())
+
     def test_deforming_meshes_require_export_rig_weights(self):
         source=FORGE.read_text(encoding="utf-8")
         self.assertIn("valid_group_indices", source)
